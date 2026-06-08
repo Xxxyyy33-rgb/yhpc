@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>风险单元管理 · 安全隐患排查系统</title>
+<link rel="stylesheet" href="p-style.css" />
+<style>
+/* === 风险等级管控规则卡 === */
+.rule-card{background:#fff;border:1px solid var(--border-light);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+.rule-card h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.rule-card h3 .h3-sub{font-size:12px;font-weight:400;color:var(--text-muted)}
+.rule-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.rule-cell{
+  border-radius:8px;border:1px solid var(--border-light);overflow:hidden;
+  display:flex;flex-direction:column;background:#fff;
+}
+.rule-cell .rc-head{
+  display:flex;align-items:center;justify-content:space-between;padding:10px 14px;color:#fff;
+}
+.rule-cell.lv-A .rc-head{background:linear-gradient(135deg,#DF2027,#F45C61)}
+.rule-cell.lv-B .rc-head{background:linear-gradient(135deg,#F29100,#FFB347)}
+.rule-cell.lv-C .rc-head{background:linear-gradient(135deg,#E6BB00,#F2D74E);color:#5C4500}
+.rule-cell.lv-D .rc-head{background:linear-gradient(135deg,#0BAFD2,#5BC9E6)}
+.rule-cell .rc-lvl{font-size:18px;font-weight:700;line-height:1;letter-spacing:1px}
+.rule-cell .rc-name{font-size:13px;font-weight:500;opacity:.95;margin-top:4px}
+.rule-cell .rc-lvr{font-size:11px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;font-weight:500}
+.rule-cell.lv-C .rc-lvr{background:rgba(0,0,0,.12);color:#5C4500}
+.rule-cell .rc-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.rule-cell .rc-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-regular)}
+.rule-cell .rc-row .rc-role{display:flex;align-items:center;gap:6px}
+.rule-cell .rc-row .rc-role .rc-dot{width:5px;height:5px;border-radius:50%;background:var(--primary)}
+.rule-cell .rc-row .rc-freq{font-weight:600;color:var(--text-title);background:#f4f6fb;border-radius:10px;padding:2px 10px}
+.rule-cell .rc-foot{padding:8px 14px;background:#f8f9fb;font-size:11px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-light)}
+.rule-cell .rc-foot .rc-scope{display:inline-flex;align-items:center;gap:4px}
+
+/* === 风险等级标签 === */
+.lvl{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.lvl::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
+.lvl-A{background:#fce8ea;color:#DF2027}.lvl-A::before{background:#DF2027}
+.lvl-B{background:#fff5e5;color:#F29100}.lvl-B::before{background:#F29100}
+.lvl-C{background:#fdf6dd;color:#A37700}.lvl-C::before{background:#E6BB00}
+.lvl-D{background:#e6f7ff;color:#0BAFD2}.lvl-D::before{background:#0BAFD2}
+
+/* === 区域树/筛选 === */
+.layout-2col{display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:flex-start}
+.tree-card{background:#fff;border:1px solid var(--border-light);border-radius:8px;overflow:hidden}
+.tree-card .tc-head{padding:12px 14px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.tree-card .tc-head .more{font-size:11px;color:var(--primary);cursor:pointer;font-weight:500}
+.tree{padding:6px 0;font-size:13px}
+.tree .t-node{
+  display:flex;align-items:center;gap:6px;padding:7px 14px;cursor:pointer;color:var(--text-regular);
+  position:relative;border-left:2px solid transparent;transition:.15s;
+}
+.tree .t-node:hover{background:#f8faff;color:var(--primary)}
+.tree .t-node.active{background:#eef2fb;color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.tree .t-node .t-arrow{color:var(--text-muted);transition:.15s;width:12px;display:inline-block}
+.tree .t-node.collapsed .t-arrow{transform:rotate(-90deg)}
+.tree .t-node .t-count{margin-left:auto;font-size:11px;background:#f0f1f3;color:var(--text-muted);padding:0 7px;border-radius:9px;line-height:18px;font-weight:500}
+.tree .t-node.active .t-count{background:var(--primary);color:#fff}
+.tree .t-sub{padding-left:24px}
+.tree .t-sub .t-node{padding:6px 14px}
+
+/* === 设备/作业小标签 === */
+.eq-cell{display:flex;flex-wrap:wrap;gap:4px;max-width:280px}
+.eq{background:#f4f6fb;color:var(--text-regular);font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid #eef0f2}
+
+/* === 操作链接 === */
+td .op{color:var(--primary);cursor:pointer;font-size:12px;margin-right:8px}
+td .op.danger{color:var(--error)}
+td .op:hover{text-decoration:underline}
+
+/* === 责任表弹窗 === */
+.rule-modal-mask{
+  position:fixed;inset:0;background:rgba(15,32,76,.45);z-index:1000;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);
+  animation:rmFade .22s ease;
+}
+.rule-modal-mask.show{display:flex}
+@keyframes rmFade{from{opacity:0}to{opacity:1}}
+.rule-modal{
+  background:#fff;border-radius:14px;width:1100px;max-width:94vw;max-height:88vh;
+  display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(15,32,76,.28);
+  animation:rmRise .26s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes rmRise{from{transform:translateY(20px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.rule-modal-head{
+  padding:18px 22px 14px;border-bottom:1px solid var(--border-light);
+  display:flex;align-items:center;gap:12px;
+}
+.rule-modal-head .rmh-icon{
+  width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#2656BB,#5680DD);
+  color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.rule-modal-head .rmh-text{flex:1;min-width:0}
+.rule-modal-head h3{font-size:16px;font-weight:700;color:var(--text-title);margin:0}
+.rule-modal-head .rmh-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.rule-modal-close{
+  cursor:pointer;width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-regular);background:#f4f6fb;border:none;flex-shrink:0;
+  transition:.18s;
+}
+.rule-modal-close:hover{background:#e9ecf3;color:var(--text-title)}
+.rule-modal-body{padding:18px 22px 4px;overflow:auto}
+.rule-modal-foot{
+  padding:12px 22px 16px;border-top:1px solid var(--border-light);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--text-muted);
+}
+
+/* 弹窗内的责任表样式微调（去除外卡片） */
+.rule-modal .rule-card{margin:0;border:none;padding:0}
+.rule-modal .rule-card>h3{display:none}
+
+/* 触发按钮（带图标） */
+.btn-rule{
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-rule svg{width:14px;height:14px}
+</style>
+</head>
+<body>
+<aside class="side-nav">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="lg-text">长沙矿山院<div class="lg-sub">安全隐患排查系统</div></div>
+  </div>
+  <nav>
+    <div class="nav-group">数据分析</div>
+    <a href="statistics.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
+      统计分析
+    </a>
+    <div class="nav-group">检查管理</div>
+    <a href="check-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      检查记录
+    </a>
+    <div class="nav-group">隐患管理</div>
+    <a href="hazard-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      隐患台账
+    </a>
+    <div class="nav-group">基础数据</div>
+    <a class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      风险单元
+    </a>
+  </nav>
+  <div class="footer">
+    <span class="avatar">吴</span>
+    <div class="me-info">
+      <div class="me-name">吴敏</div>
+      <div class="me-dept">安环部 · 管理员</div>
+    </div>
+    <span class="logout" title="退出">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+    </span>
+  </div>
+</aside>
+
+<div class="breadcrumb">
+  <a href="../index.html">原型导航</a><span class="sep">/</span>
+  基础数据<span class="sep">/</span>
+  风险单元管理
+</div>
+
+<div class="page-header">
+  <div>
+    <h2>安全风险单元管理 <span class="ph-sub">长沙矿山研究院 · 风险分布及分级明细</span></h2>
+    <div class="subtitle">数据基于《安全风险分布及分级明细表》· 共 60 个风险单元 · 覆盖 4 大区域 · 13 类事故风险</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-default btn-sm btn-rule" onclick="document.getElementById('ruleModal').classList.add('show')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      分级管控责任表
+    </button>
+  </div>
+</div>
+
+<div class="kpi-row cols-5">
+  <div class="kpi-card blue">
+    <div class="label"><span class="icon">🛡️</span>风险单元总数</div>
+    <div class="value">60<span class="unit">个</span></div>
+    <div class="sub">较 2025 年同期 <span class="trend up-good"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>3</span></div>
+  </div>
+  <div class="kpi-card red">
+    <div class="label"><span class="lvl lvl-A">A</span>重大风险</div>
+    <div class="value">2<span class="unit">个</span></div>
+    <div class="sub">公司级管控 · 月/半月/周/天 四级</div>
+  </div>
+  <div class="kpi-card orange">
+    <div class="label"><span class="lvl lvl-B">B</span>较大风险</div>
+    <div class="value">12<span class="unit">个</span></div>
+    <div class="sub">公司级管控 · 季/月/周/天 四级</div>
+  </div>
+  <div class="kpi-card" style="--bar:#E6BB00">
+    <div class="label"><span class="lvl lvl-C">C</span>一般风险</div>
+    <div class="value" style="color:#A37700">28<span class="unit">个</span></div>
+    <div class="sub">部门级管控 · 周/天 二级</div>
+  </div>
+  <div class="kpi-card cyan">
+    <div class="label"><span class="lvl lvl-D">D</span>低风险</div>
+    <div class="value">18<span class="unit">个</span></div>
+    <div class="sub">班组/岗位级管控 · 天 一级</div>
+  </div>
+</div>
+
+<!-- 安全风险分级管控责任表 · 弹窗 -->
+<div class="rule-modal-mask" id="ruleModal">
+<div class="rule-modal">
+<div class="rule-modal-head">
+  <span class="rmh-icon">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  </span>
+  <div class="rmh-text">
+    <h3>安全风险分级管控责任表</h3>
+    <div class="rmh-sub">参照《安全生产风险分级管控办法》· 由总经办与安环部共同维护</div>
+  </div>
+  <button class="rule-modal-close" onclick="document.getElementById('ruleModal').classList.remove('show')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+</div>
+<div class="rule-modal-body">
+<div class="rule-card">
+  <h3>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    安全风险分级管控责任表
+    <span class="h3-sub">参照《安全生产风险分级管控办法》</span>
+    <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">最近更新 2026-04-22 · 编辑 ›</span>
+  </h3>
+  <div class="rule-grid">
+
+    <div class="rule-cell lv-A">
+      <div class="rc-head">
+        <div>
+          <div class="rc-lvl">A 级</div>
+          <div class="rc-name">重大风险 · 红色</div>
+        </div>
+        <span class="rc-lvr">公司级</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>总经理</span><span class="rc-freq">月</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>分管副总经理</span><span class="rc-freq">半月</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>部门负责人</span><span class="rc-freq">周</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>班组长 / 岗位作业人员</span><span class="rc-freq">天</span></div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-scope"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>覆盖 2 个单元</span>
+        <span>D 值：10 人以上</span>
+      </div>
+    </div>
+
+    <div class="rule-cell lv-B">
+      <div class="rc-head">
+        <div>
+          <div class="rc-lvl">B 级</div>
+          <div class="rc-name">较大风险 · 橙色</div>
+        </div>
+        <span class="rc-lvr">公司级</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>总经理</span><span class="rc-freq">季度</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>分管副总经理</span><span class="rc-freq">月</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>部门负责人</span><span class="rc-freq">周</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>班组长 / 岗位作业人员</span><span class="rc-freq">天</span></div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-scope"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>覆盖 12 个单元</span>
+        <span>D 值：3-10 人</span>
+      </div>
+    </div>
+
+    <div class="rule-cell lv-C">
+      <div class="rc-head">
+        <div>
+          <div class="rc-lvl">C 级</div>
+          <div class="rc-name">一般风险 · 黄色</div>
+        </div>
+        <span class="rc-lvr">部门级</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-row" style="color:#9096A2"><span class="rc-role"><span class="rc-dot" style="background:#c8cad1"></span>总经理</span><span class="rc-freq" style="background:#f0f1f3;color:#9096A2">—</span></div>
+        <div class="rc-row" style="color:#9096A2"><span class="rc-role"><span class="rc-dot" style="background:#c8cad1"></span>分管副总经理</span><span class="rc-freq" style="background:#f0f1f3;color:#9096A2">—</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>部门负责人</span><span class="rc-freq">周</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>班组长 / 岗位作业人员</span><span class="rc-freq">天</span></div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-scope"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>覆盖 28 个单元</span>
+        <span>D 值：1-3 人</span>
+      </div>
+    </div>
+
+    <div class="rule-cell lv-D">
+      <div class="rc-head">
+        <div>
+          <div class="rc-lvl">D 级</div>
+          <div class="rc-name">低风险 · 蓝色</div>
+        </div>
+        <span class="rc-lvr">班组/岗位级</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-row" style="color:#9096A2"><span class="rc-role"><span class="rc-dot" style="background:#c8cad1"></span>总经理</span><span class="rc-freq" style="background:#f0f1f3;color:#9096A2">—</span></div>
+        <div class="rc-row" style="color:#9096A2"><span class="rc-role"><span class="rc-dot" style="background:#c8cad1"></span>分管副总经理</span><span class="rc-freq" style="background:#f0f1f3;color:#9096A2">—</span></div>
+        <div class="rc-row" style="color:#9096A2"><span class="rc-role"><span class="rc-dot" style="background:#c8cad1"></span>部门负责人</span><span class="rc-freq" style="background:#f0f1f3;color:#9096A2">—</span></div>
+        <div class="rc-row"><span class="rc-role"><span class="rc-dot"></span>班组长 / 岗位作业人员</span><span class="rc-freq">天</span></div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-scope"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>覆盖 18 个单元</span>
+        <span>D 值：1 人以下</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<div class="rule-modal-foot">
+  <span>共 4 个等级 · 60 个风险单元 · 最近更新 2026-04-22</span>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('ruleModal').classList.remove('show')">关闭</button>
+    <button class="btn btn-primary btn-sm">编辑责任表</button>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="filter-bar">
+  <div class="form-group"><label>风险等级</label>
+    <select><option>全部</option><option>A 级 · 重大</option><option>B 级 · 较大</option><option>C 级 · 一般</option><option>D 级 · 低</option></select>
+  </div>
+  <div class="form-group"><label>事故类型</label>
+    <select>
+      <option>全部 13 类</option>
+      <option>火灾</option><option>触电</option><option>机械伤害</option><option>高处坠落</option>
+      <option>物体打击</option><option>起重伤害</option><option>车辆伤害</option><option>容器爆炸</option>
+      <option>其他爆炸</option><option>中毒窒息</option><option>灼烫</option><option>电梯事故</option>
+      <option>其他伤害</option>
+    </select>
+  </div>
+  <div class="form-group"><label>责任部门</label>
+    <select><option>全部</option><option>院本部</option><option>资环事业部</option><option>检测中心</option><option>智能矿山事业部</option><option>充填事业部</option></select>
+  </div>
+  <div class="form-group"><label>管控状态</label>
+    <select><option>全部</option><option>正常管控</option><option>本周已检</option><option>本周未检</option><option>超期</option></select>
+  </div>
+  <div class="form-group"><label>关键词</label>
+    <input placeholder="单元名称 / 场所 / 设备" style="width:200px" />
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm">查询</button>
+    <button class="btn btn-outline btn-sm">重置</button>
+  </div>
+</div>
+
+<div class="layout-2col">
+
+  <!-- 左侧区域树 -->
+  <div class="tree-card">
+    <div class="tc-head">区域 / 场所<span class="more">展开 ›</span></div>
+    <div class="tree">
+      <div class="t-node active"><span class="t-arrow">▾</span>全部区域<span class="t-count">60</span></div>
+
+      <div class="t-node"><span class="t-arrow">▾</span>院区<span class="t-count">11</span></div>
+      <div class="t-sub">
+        <div class="t-node">采矿楼<span class="t-count">3</span></div>
+        <div class="t-node">科研楼<span class="t-count">1</span></div>
+        <div class="t-node">安全大楼<span class="t-count">3</span></div>
+        <div class="t-node">院内道路·停车场<span class="t-count">1</span></div>
+        <div class="t-node">公共区域<span class="t-count">3</span></div>
+      </div>
+
+      <div class="t-node"><span class="t-arrow">▾</span>资源利用与环保事业部<span class="t-count">12</span></div>
+      <div class="t-sub">
+        <div class="t-node">磨矿实验室 1-2<span class="t-count">2</span></div>
+        <div class="t-node">浮选实验室 1-4<span class="t-count">4</span></div>
+        <div class="t-node">制样·样品处理<span class="t-count">3</span></div>
+        <div class="t-node">破碎·污水·除尘<span class="t-count">3</span></div>
+      </div>
+
+      <div class="t-node"><span class="t-arrow">▾</span>检测中心本部<span class="t-count">17</span></div>
+      <div class="t-sub">
+        <div class="t-node">办公楼实验室 1-4<span class="t-count">4</span></div>
+        <div class="t-node">粉尘·风洞·恒温<span class="t-count">3</span></div>
+        <div class="t-node">本安·气体·电源<span class="t-count">5</span></div>
+        <div class="t-node">救护·校准·通讯·金相<span class="t-count">5</span></div>
+      </div>
+
+      <div class="t-node"><span class="t-arrow">▾</span>后湖实验基地<span class="t-count">20</span></div>
+      <div class="t-sub">
+        <div class="t-node">智能矿山总装·装配车间<span class="t-count">2</span></div>
+        <div class="t-node">智能矿山实验室 1-8<span class="t-count">8</span></div>
+        <div class="t-node">充填实验室<span class="t-count">7</span></div>
+        <div class="t-node">供配电<span class="t-count">3</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧表格 -->
+  <div class="table-wrapper">
+    <div class="tabs-bar">
+      <span class="tab active">全部 <span class="count">60</span></span>
+      <span class="tab" style="color:#DF2027">A 级 <span class="count" style="background:#DF2027;color:#fff">2</span></span>
+      <span class="tab" style="color:#F29100">B 级 <span class="count" style="background:#F29100;color:#fff">12</span></span>
+      <span class="tab" style="color:#A37700">C 级 <span class="count" style="background:#E6BB00;color:#fff">28</span></span>
+      <span class="tab" style="color:#0BAFD2">D 级 <span class="count" style="background:#0BAFD2;color:#fff">18</span></span>
+    </div>
+    <div class="table-toolbar">
+      <div class="info">已选 <b>0</b> 条 · 当前显示 <b>15</b> 条 · 共 <b>60</b> 条</div>
+      <div class="actions">
+        <button class="btn btn-default btn-xs">批量调整等级</button>
+        <button class="btn btn-default btn-xs">批量分派责任人</button>
+        <button class="btn btn-outline btn-xs">导出</button>
+        <a href="risk-unit-create.html" class="btn btn-primary btn-xs" style="display:inline-flex;align-items:center;gap:4px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          新建风险单元
+        </a>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="min-width:1400px">
+      <thead>
+        <tr>
+          <th style="width:38px"><input type="checkbox" /></th>
+          <th style="width:48px">序号</th>
+          <th style="width:130px">区域</th>
+          <th style="width:140px">场所</th>
+          <th style="width:200px">岗位 / 作业活动</th>
+          <th style="min-width:280px">主要设备设施</th>
+          <th style="width:90px;text-align:center">风险等级</th>
+          <th style="min-width:200px">可能事故类型</th>
+          <th style="width:100px">管控层级</th>
+          <th style="width:80px;text-align:center">管控频次</th>
+          <th style="width:110px">责任人</th>
+          <th style="width:120px;text-align:center">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- 院区 -->
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>1</td>
+          <td>院区</td>
+          <td>采矿楼</td>
+          <td>办公室 · 办公人员</td>
+          <td><div class="eq-cell"><span class="eq">办公设施</span><span class="eq">空调</span><span class="eq">饮水机</span></div></td>
+          <td class="text-center"><span class="lvl lvl-D">D</span></td>
+          <td><span class="tag tag-warning">火灾</span> <span class="tag tag-warning">触电</span></td>
+          <td>班组/岗位级</td>
+          <td class="text-center"><span class="tag tag-success">天</span></td>
+          <td>采矿楼楼长 · 王晋</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>2</td>
+          <td>院区</td>
+          <td>采矿楼</td>
+          <td>电梯间 · 乘梯</td>
+          <td><div class="eq-cell"><span class="eq">客梯 2 台</span><span class="eq">应急救援装置</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">电梯事故</span> <span class="tag tag-warning">机械伤害</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>物业运营部 · 谭文玮</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>3</td>
+          <td>院区</td>
+          <td>采矿楼</td>
+          <td>消防泵房 · 维护作业</td>
+          <td><div class="eq-cell"><span class="eq">消防水泵</span><span class="eq">稳压罐</span><span class="eq">配电</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">触电</span> <span class="tag tag-warning">机械伤害</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>物业运营部 · 谭文玮</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>4</td>
+          <td>院区</td>
+          <td>安全大楼</td>
+          <td>配电间 · 电工</td>
+          <td><div class="eq-cell"><span class="eq">变配电设施</span><span class="eq">高压柜</span><span class="eq">低压柜</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">触电</span> <span class="tag tag-warning">火灾</span> <span class="tag tag-warning">其他爆炸</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>安环部 · 李诚星</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>5</td>
+          <td>院区</td>
+          <td>院内道路·停车场</td>
+          <td>车辆行驶 / 地下车库通行</td>
+          <td><div class="eq-cell"><span class="eq">机动车辆</span><span class="eq">地下车库</span><span class="eq">道闸</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">车辆伤害</span> <span class="tag tag-warning">物体打击</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>物业运营部 · 谭文玮</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>6</td>
+          <td>院区</td>
+          <td>食堂</td>
+          <td>烹饪、就餐</td>
+          <td><div class="eq-cell"><span class="eq">燃气灶</span><span class="eq">蒸饭车</span><span class="eq">燃气管路</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">火灾</span> <span class="tag tag-warning">灼烫</span> <span class="tag tag-warning">中毒窒息</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>物业运营部 · 谭文玮</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+
+        <!-- 资环事业部 -->
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>7</td>
+          <td>资环事业部</td>
+          <td>磨矿实验室 1</td>
+          <td>磨矿、球磨、筛分作业</td>
+          <td><div class="eq-cell"><span class="eq">棒磨机</span><span class="eq">锥形球磨机</span><span class="eq">立式搅拌磨</span><span class="eq">振动磨样机</span><span class="eq">机械振动筛</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">机械伤害</span> <span class="tag tag-warning">物体打击</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>资环事业部 · 龚明</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>8</td>
+          <td>资环事业部</td>
+          <td>浮选实验室 1</td>
+          <td>浮选、磁选、过滤、搅拌作业</td>
+          <td><div class="eq-cell"><span class="eq">单槽浮选机</span><span class="eq">高梯度磁选机</span><span class="eq">真空过滤机</span><span class="eq">电动搅拌器</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">触电</span> <span class="tag tag-warning">机械伤害</span> <span class="tag tag-warning">中毒窒息</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>资环事业部 · 龚明</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>9</td>
+          <td>资环事业部</td>
+          <td>样品处理室</td>
+          <td>烘干作业</td>
+          <td><div class="eq-cell"><span class="eq">鼓风干燥箱</span><span class="eq">箱式电阻炉</span><span class="eq">干燥箱</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">灼烫</span> <span class="tag tag-warning">触电</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>资环事业部 · 龚明</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>10</td>
+          <td>资环事业部</td>
+          <td>破碎实验室</td>
+          <td>破碎、摇床作业</td>
+          <td><div class="eq-cell"><span class="eq">密封鄂式破碎机</span><span class="eq">密封对辊机</span><span class="eq">摇床</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">机械伤害</span> <span class="tag tag-warning">物体打击</span> <span class="tag tag-warning">触电</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>资环事业部 · 龚明</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+
+        <!-- 检测中心 -->
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>11</td>
+          <td>检测中心</td>
+          <td>办公楼·一号实验室</td>
+          <td>潜孔冲击/液力/钻机/跌落/切割/起重/检修</td>
+          <td><div class="eq-cell"><span class="eq">钻机</span><span class="eq">切割机</span><span class="eq">潜孔冲击试验台</span><span class="eq">起重设备</span></div></td>
+          <td class="text-center"><span class="lvl lvl-A">A</span></td>
+          <td><span class="tag tag-error">起重伤害</span> <span class="tag tag-error">机械伤害</span> <span class="tag tag-warning">物体打击</span> <span class="tag tag-warning">触电</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-error">月/半月/周/天</span></td>
+          <td>检测中心 · 谢乐平</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>12</td>
+          <td>检测中心</td>
+          <td>办公楼·二号实验室</td>
+          <td>机械强度试验、高低温交变湿热、起重作业</td>
+          <td><div class="eq-cell"><span class="eq">运输车辆保护试验台</span><span class="eq">500t 拉力试验机</span><span class="eq">逆止器试验台</span><span class="eq">起重设备</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">起重伤害</span> <span class="tag tag-warning">机械伤害</span> <span class="tag tag-warning">触电</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>检测中心 · 谢乐平</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>13</td>
+          <td>检测中心</td>
+          <td>本安系统特性实验室</td>
+          <td>本安实验</td>
+          <td><div class="eq-cell"><span class="eq">本安系统特性试验装置</span><span class="eq">火花试验机</span></div></td>
+          <td class="text-center"><span class="lvl lvl-C">C</span></td>
+          <td><span class="tag tag-warning">触电</span> <span class="tag tag-warning">其他爆炸</span></td>
+          <td>部门级</td>
+          <td class="text-center"><span class="tag tag-blue">周/天</span></td>
+          <td>检测中心 · 谢乐平</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+
+        <!-- 后湖实验基地 -->
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>14</td>
+          <td>后湖实验基地</td>
+          <td>智能矿山总装车间</td>
+          <td>焊工、装配工、吊装工、车工、钳工</td>
+          <td><div class="eq-cell"><span class="eq">电焊机</span><span class="eq">空压机</span><span class="eq">行车</span><span class="eq">普通车床</span><span class="eq">钻铣床</span><span class="eq">砂轮机</span><span class="eq">叉车</span></div></td>
+          <td class="text-center"><span class="lvl lvl-A">A</span></td>
+          <td><span class="tag tag-error">起重伤害</span> <span class="tag tag-error">机械伤害</span> <span class="tag tag-error">车辆伤害</span> <span class="tag tag-warning">触电</span> <span class="tag tag-warning">火灾</span> <span class="tag tag-warning">灼烫</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-error">月/半月/周/天</span></td>
+          <td>智能矿山事业部 · 汤义武</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>15</td>
+          <td>后湖实验基地</td>
+          <td>充填实验室·激发剂生产模拟系统</td>
+          <td>模拟激发剂生产实验</td>
+          <td><div class="eq-cell"><span class="eq">激发剂生产模拟系统</span><span class="eq">空压机</span></div></td>
+          <td class="text-center"><span class="lvl lvl-B">B</span></td>
+          <td><span class="tag tag-warning">机械伤害</span> <span class="tag tag-warning">中毒窒息</span> <span class="tag tag-warning">容器爆炸</span> <span class="tag tag-warning">触电</span></td>
+          <td>公司级</td>
+          <td class="text-center"><span class="tag tag-warning">月/周/天</span></td>
+          <td>充填事业部 · 莫进信</td>
+          <td class="text-center">
+            <span class="op">查看</span>
+            <span class="op">编辑</span>
+            <span class="op danger">停用</span>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+    </div>
+    <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-light);font-size:13px;color:var(--text-muted)">
+      <div>显示第 1 - 15 条 · 共 60 条 · 每页
+        <select style="height:28px;border:1px solid var(--border);border-radius:4px;font-size:12px;padding:0 6px"><option>15</option><option>30</option><option>50</option></select>
+        条
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-default btn-xs">‹ 上一页</button>
+        <button class="btn btn-primary btn-xs">1</button>
+        <button class="btn btn-default btn-xs">2</button>
+        <button class="btn btn-default btn-xs">3</button>
+        <button class="btn btn-default btn-xs">4</button>
+        <button class="btn btn-default btn-xs">下一页 ›</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BODY -->
+</body>
+</html>

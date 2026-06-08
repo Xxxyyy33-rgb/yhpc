@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>发起检查 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+/* 检查类型选择标签（单行横向滚动） */
+.type-grid{
+  display:flex;flex-wrap:nowrap;gap:8px;width:100%;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;padding-bottom:2px;
+}
+.type-grid::-webkit-scrollbar{display:none}
+.type-chip{
+  flex-shrink:0;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border-radius:18px;
+  border:1px solid #e8eaed;background:#fff;color:var(--text-regular);font-size:12px;font-weight:500;
+  cursor:pointer;transition:.18s;
+}
+.type-chip:active,.type-chip:hover{border-color:var(--primary-light);background:#f5f8ff}
+.type-chip.active{
+  background:linear-gradient(135deg,#2656BB,#5680DD);border-color:var(--primary);color:#fff;font-weight:600;
+  box-shadow:0 2px 6px rgba(38,86,187,.25);
+}
+
+/* 人员标签 */
+.people-input{
+  display:flex;flex-wrap:wrap;gap:6px;flex:1;min-height:24px;align-items:center;justify-content:flex-end;
+}
+.people-input .pp{
+  display:inline-flex;align-items:center;gap:4px;background:#eef2fb;color:var(--primary);
+  border-radius:12px;padding:2px 8px 2px 4px;font-size:12px;
+}
+.people-input .pp .av{
+  width:18px;height:18px;border-radius:50%;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;
+}
+.people-input .pp .x{color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;margin-left:1px}
+.people-input .add-pp{
+  width:24px;height:24px;border-radius:50%;border:1px dashed var(--primary-light);color:var(--primary);
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;
+}
+
+/* === 风险等级胶囊 === */
+.ru-lv-tag{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.ru-lv-tag.lvl-A{background:linear-gradient(135deg,#DF2027,#F45C61)}
+.ru-lv-tag.lvl-B{background:linear-gradient(135deg,#F29100,#FFB347)}
+.ru-lv-tag.lvl-C{background:linear-gradient(135deg,#E6BB00,#F2D74E);color:#5C4500}
+.ru-lv-tag.lvl-D{background:linear-gradient(135deg,#0BAFD2,#5BC9E6)}
+
+/* 已选风险单元卡 */
+.ru-picked{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.ru-chip{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#fff;
+  border:1px solid #eef1f5;
+}
+.ru-chip .ru-lv{
+  width:24px;height:24px;border-radius:6px;color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ru-chip.lvl-A .ru-lv{background:linear-gradient(135deg,#DF2027,#F45C61)}
+.ru-chip.lvl-A{border-color:#fbd5d8}
+.ru-chip.lvl-B .ru-lv{background:linear-gradient(135deg,#F29100,#FFB347)}
+.ru-chip.lvl-B{border-color:#ffe4bb}
+.ru-chip.lvl-C .ru-lv{background:linear-gradient(135deg,#E6BB00,#F2D74E);color:#5C4500}
+.ru-chip.lvl-C{border-color:#fbe9a3}
+.ru-chip.lvl-D .ru-lv{background:linear-gradient(135deg,#0BAFD2,#5BC9E6)}
+.ru-chip.lvl-D{border-color:#bfe6f2}
+.ru-chip .ru-info{flex:1;min-width:0}
+.ru-chip .ru-name{font-size:13px;font-weight:600;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ru-chip .ru-sub{font-size:11px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ru-chip .ru-x{
+  width:20px;height:20px;border-radius:50%;background:#f1f3f6;color:var(--text-muted);
+  display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;cursor:pointer;
+}
+
+/* 添加按钮 */
+.ru-add{
+  display:flex;align-items:center;gap:6px;padding:10px 12px;border-radius:10px;
+  border:1.5px dashed var(--primary-light);background:#f8faff;color:var(--primary);
+  font-size:13px;font-weight:600;cursor:pointer;transition:.18s;
+}
+.ru-add:active,.ru-add:hover{background:#eef2fb;border-color:var(--primary);border-style:solid}
+.ru-add svg{width:16px;height:16px}
+.ru-add .ru-add-arrow{margin-left:auto;font-size:16px}
+
+/* ============ 风险单元选择弹窗 · 重写 ============ */
+.ru-mask{
+  position:fixed;inset:0;background:rgba(20,30,55,.5);z-index:90;
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);
+}
+.ru-mask.show{display:flex;animation:fadeIn .2s}
+.ru-sheet{
+  width:100%;max-width:480px;background:#F4F6FB;border-radius:18px 18px 0 0;
+  display:flex;flex-direction:column;height:88vh;animation:slideUp .25s;overflow:hidden;
+}
+
+/* 顶部头部 */
+.ru-sheet-head{
+  padding:6px 0 0;background:#fff;flex-shrink:0;border-bottom:1px solid #f1f3f6;
+  position:relative;
+}
+.ru-sheet-head::before{
+  content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:36px;height:4px;border-radius:2px;background:#e4e7ed;
+}
+.ru-sheet-head .rsh-row{
+  display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;
+}
+.ru-sheet-head .rsh-title{font-size:16px;font-weight:600;color:var(--text-title)}
+.ru-sheet-head .rsh-title .rsh-cnt{
+  font-size:11px;color:var(--text-muted);font-weight:400;margin-left:6px;
+  background:#eef2fb;color:var(--primary);padding:1px 8px;border-radius:9px;
+}
+.ru-sheet-head .rsh-close{
+  width:30px;height:30px;border-radius:50%;background:#f4f6fb;color:var(--text-muted);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;
+}
+
+.ru-sheet-search{
+  margin:0 14px 12px;background:#f4f6fb;border-radius:10px;display:flex;align-items:center;gap:8px;padding:9px 12px;
+}
+.ru-sheet-search svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0}
+.ru-sheet-search input{flex:1;border:none;outline:none;font-size:14px;background:transparent}
+
+/* 筛选区 (滚动主体上方固定) */
+.ru-filter-block{
+  background:#fff;padding:0 0 8px;flex-shrink:0;border-bottom:1px solid #f1f3f6;
+}
+.ru-filter-row{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:11.5px;color:var(--text-muted)}
+.ru-filter-row .frl{flex-shrink:0;font-weight:500;width:42px}
+.ru-filter-row .frl-chips{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;min-width:0}
+.ru-filter-row .frl-chips::-webkit-scrollbar{display:none}
+.ru-filter-row .rsf-chip{
+  flex-shrink:0;padding:5px 11px;border-radius:13px;background:#f4f6fb;border:1px solid transparent;
+  font-size:12px;color:var(--text-regular);transition:.18s;cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.ru-filter-row .rsf-chip .rsf-cnt{font-size:10px;opacity:.65;font-weight:500}
+.ru-filter-row .rsf-chip.active{background:var(--primary-bg);color:var(--primary);border-color:var(--primary-light);font-weight:600}
+.ru-filter-row .rsf-chip.active .rsf-cnt{opacity:1}
+.ru-filter-row .rsf-chip .lv-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.ru-filter-row .rsf-chip .lv-dot.A{background:#DF2027}
+.ru-filter-row .rsf-chip .lv-dot.B{background:#F29100}
+.ru-filter-row .rsf-chip .lv-dot.C{background:#E6BB00}
+.ru-filter-row .rsf-chip .lv-dot.D{background:#0BAFD2}
+.ru-filter-row .rsf-chip.lv-A.active{background:#fce8ea;color:#DF2027;border-color:#fbd5d8}
+.ru-filter-row .rsf-chip.lv-B.active{background:#fff5e5;color:#F29100;border-color:#ffe4bb}
+.ru-filter-row .rsf-chip.lv-C.active{background:#fdf6dd;color:#A37700;border-color:#fbe9a3}
+.ru-filter-row .rsf-chip.lv-D.active{background:#e6f7ff;color:#0BAFD2;border-color:#bfe6f2}
+
+/* 列表区 */
+.ru-sheet-list{flex:1;overflow-y:auto;padding:8px 14px}
+.ru-group-title{
+  font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;
+  padding:10px 4px 6px;display:flex;align-items:center;gap:6px;text-transform:uppercase;
+}
+.ru-group-title::before{content:"";width:3px;height:10px;background:var(--primary);border-radius:2px}
+.ru-group-title .rg-name{color:var(--text-title);text-transform:none;font-size:12px}
+.ru-group-title .rg-cnt{margin-left:auto;font-weight:500;color:var(--text-muted);background:#eef2fb;padding:1px 8px;border-radius:9px;font-size:10px}
+
+.ru-item{
+  background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;
+  border:1.5px solid #fff;transition:.18s;cursor:pointer;
+}
+.ru-item:active{background:#fafbfd}
+.ru-item.selected{border-color:var(--primary);background:#f5f8ff;box-shadow:0 2px 8px rgba(38,86,187,.08)}
+.ru-item .ru-check{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid #c8d3eb;flex-shrink:0;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;color:transparent;background:#fff;
+}
+.ru-item.selected .ru-check{background:var(--primary);border-color:var(--primary);color:#fff}
+.ru-item .ru-check svg{width:12px;height:12px}
+.ru-item .ru-body{flex:1;min-width:0}
+.ru-item .rb-head{display:flex;align-items:center;gap:8px}
+.ru-item .rb-name{font-size:14px;font-weight:600;color:var(--text-title);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ru-item .rb-mgr{
+  font-size:10px;color:var(--text-muted);background:#f4f6fb;padding:1px 7px;border-radius:6px;flex-shrink:0;
+  border:1px solid #eef1f5;font-weight:500;
+}
+.ru-item .rb-meta{font-size:11.5px;color:var(--text-regular);margin-top:6px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ru-item .rb-meta .rm-lbl{color:var(--text-muted)}
+.ru-item .rb-foot{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;font-size:11px;color:var(--text-muted)}
+.ru-item .rb-foot .rf-tag{
+  background:#fff5e5;color:#F29100;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:500;
+  border:1px solid #ffe4bb;
+}
+
+/* 底部操作栏 */
+.ru-sheet-foot{
+  background:#fff;padding:12px 14px calc(12px + var(--safe-bottom));display:flex;gap:8px;align-items:center;
+  border-top:1px solid #eef1f5;flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,.04);
+}
+.ru-sheet-foot .rsf-info{flex:1;font-size:12.5px;color:var(--text-regular);line-height:1.4}
+.ru-sheet-foot .rsf-info .rsf-cnt{color:var(--primary);font-weight:600;font-size:14px}
+.ru-sheet-foot .rsf-info .rsf-sub{color:var(--text-muted);font-size:11px;margin-left:4px}
+.ru-sheet-foot .btn{flex-shrink:0;height:36px;border-radius:8px;font-size:13px;font-weight:500;padding:0 16px;border:none;cursor:pointer}
+.ru-sheet-foot .btn-default{background:#f4f6fb;color:var(--text-regular)}
+.ru-sheet-foot .btn-primary{background:var(--primary);color:#fff;font-weight:600}
+
+/* 关联隐患选择入口 */
+.hz-pick{
+  display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:1.5px dashed var(--primary-light);
+  background:#f8faff;cursor:pointer;transition:.18s;
+}
+.hz-pick:active,.hz-pick:hover{background:#eef2fb;border-color:var(--primary);border-style:solid}
+.hz-pick-ic{
+  width:36px;height:36px;border-radius:9px;background:#eef2fb;color:var(--primary);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.hz-pick-ic svg{width:18px;height:18px}
+.hz-pick-text{flex:1;min-width:0}
+.hz-pick-text .hp-title{font-size:14px;font-weight:600;color:var(--primary)}
+.hz-pick-text .hp-desc{font-size:11px;color:var(--text-muted);margin-top:2px}
+.hz-pick-arrow{color:var(--primary);font-size:18px;flex-shrink:0}
+
+/* 已关联隐患列表 */
+.hz-linked-list{padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
+.hz-linked{
+  border:1px solid #eef1f5;border-radius:10px;padding:10px 12px;background:#fff;
+  position:relative;transition:.18s;
+}
+.hz-linked .hl-head{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.hz-linked .hl-no{font-family:Menlo,Consolas,monospace;color:var(--primary);font-weight:600}
+.hz-linked .hl-del{
+  margin-left:auto;width:20px;height:20px;border-radius:50%;background:#f1f3f6;color:var(--text-muted);
+  display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;
+}
+.hz-linked .hl-del:active{background:var(--error);color:#fff}
+.hz-linked .hl-title{margin-top:6px;font-size:14px;font-weight:600;color:var(--text-title);line-height:1.45}
+.hz-linked .hl-meta{
+  margin-top:6px;display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text-muted);
+}
+.hz-linked .hl-meta span{display:inline-flex;align-items:center;gap:3px}
+.hz-linked .hl-meta svg{width:12px;height:12px}
+
+/* 附件文件列表 */
+.file-list{padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
+.file-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#fff;
+  border:1px solid #eef1f5;
+}
+.file-item .fi-ic{
+  width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.file-item .fi-ic svg{width:16px;height:16px}
+.file-item .fi-ic.blue{background:#eef2fb;color:var(--primary)}
+.file-item .fi-ic.orange{background:#fff5e5;color:var(--warning)}
+.file-item .fi-ic.green{background:#e8fcf4;color:var(--success)}
+.file-item .fi-info{flex:1;min-width:0}
+.file-item .fi-name{font-size:13px;font-weight:500;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .fi-meta{font-size:11px;color:var(--text-muted);display:flex;gap:4px;margin-top:2px}
+.file-item .fi-act{
+  width:24px;height:24px;border-radius:50%;background:#f4f6fb;color:var(--text-muted);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+
+/* 添加附件入口 */
+.upload-add{
+  margin:0 16px 14px;padding:14px;border-radius:10px;border:1.5px dashed #c8d3eb;background:#fafbfd;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--primary);cursor:pointer;
+}
+.upload-add svg{width:24px;height:24px}
+.upload-add span:nth-child(2){font-size:13px;font-weight:600}
+.upload-add .upload-add-tip{font-size:11px;color:var(--text-muted);font-weight:400}
+
+/* ============ 关联隐患选择弹窗 ============ */
+.hz-mask{
+  position:fixed;inset:0;background:rgba(20,30,55,.5);z-index:90;
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);
+}
+.hz-mask.show{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.hz-sheet{
+  width:100%;max-width:480px;background:#F4F6FB;border-radius:18px 18px 0 0;
+  display:flex;flex-direction:column;max-height:88vh;animation:slideUp .25s;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.hz-sheet-head{
+  padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;
+  background:#fff;border-radius:18px 18px 0 0;
+}
+.hz-sheet-head .hsh-title{font-size:16px;font-weight:600;color:var(--text-title)}
+.hz-sheet-head .hsh-close{
+  width:30px;height:30px;border-radius:50%;background:#f4f6fb;color:var(--text-muted);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;
+}
+.hz-sheet-search{
+  margin:0 14px 10px;background:#fff;border-radius:10px;display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border:1px solid #eef1f5;
+}
+.hz-sheet-search svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0}
+.hz-sheet-search input{flex:1;border:none;outline:none;font-size:14px;background:transparent}
+.hz-sheet-filter{
+  display:flex;gap:6px;padding:0 14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.hz-sheet-filter::-webkit-scrollbar{display:none}
+.hz-sheet-filter .hsf-chip{
+  flex-shrink:0;padding:5px 12px;border-radius:14px;background:#fff;border:1px solid #eef1f5;
+  font-size:12px;color:var(--text-regular);
+}
+.hz-sheet-filter .hsf-chip.active{background:var(--primary-bg);color:var(--primary);border-color:var(--primary-light);font-weight:600}
+.hz-sheet-list{flex:1;overflow-y:auto;padding:0 14px}
+.hz-sheet-item{
+  background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;
+  border:1.5px solid #fff;transition:.18s;cursor:pointer;
+}
+.hz-sheet-item.selected{border-color:var(--primary);background:#f5f8ff}
+.hz-sheet-item.disabled{opacity:.55}
+.hz-check{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid #c8d3eb;flex-shrink:0;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;color:transparent;background:#fff;
+}
+.hz-sheet-item.selected .hz-check{background:var(--primary);border-color:var(--primary);color:#fff}
+.hz-check svg{width:12px;height:12px}
+.hz-sheet-item .hsi-body{flex:1;min-width:0}
+.hz-sheet-item .hsi-head{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);font-family:Menlo,Consolas,monospace}
+.hz-sheet-item .hsi-no{color:var(--primary);font-weight:600}
+.hz-sheet-item .hsi-title{font-size:14px;font-weight:600;color:var(--text-title);margin-top:4px;line-height:1.4}
+.hz-sheet-item .hsi-meta{margin-top:6px;display:flex;gap:12px;font-size:11px;color:var(--text-muted);flex-wrap:wrap}
+.hz-sheet-foot{
+  background:#fff;padding:12px 14px calc(12px + var(--safe-bottom));display:flex;gap:8px;align-items:center;
+  border-top:1px solid #eef1f5;
+}
+.hz-sheet-foot .hsf-info{flex:1;font-size:13px;color:var(--text-regular)}
+.hz-sheet-foot .hsf-info b{color:var(--primary);font-weight:600}
+
+/* ============ 检查范围选择（单行分段控件） ============ */
+.scope-seg{display:flex;background:#f4f6fb;border-radius:10px;padding:3px;width:100%}
+.scope-seg .ss-item{
+  flex:1;text-align:center;padding:8px 4px;border-radius:8px;font-size:13px;color:var(--text-regular);
+  cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.scope-seg .ss-item svg{width:14px;height:14px;opacity:.65}
+.scope-seg .ss-item.active{background:#fff;color:var(--primary);font-weight:600;box-shadow:0 1px 3px rgba(38,86,187,.15)}
+.scope-seg .ss-item.active svg{opacity:1}
+
+/* 已选项目卡片 */
+.proj-picked{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;background:#fff;
+  border:1px solid var(--primary-light);box-shadow:0 2px 6px rgba(38,86,187,.06);cursor:pointer;
+}
+.proj-picked .pp-ic{
+  width:38px;height:38px;border-radius:10px;background:#eef2fb;color:var(--primary);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.proj-picked .pp-ic svg{width:19px;height:19px}
+.proj-picked .pp-body{flex:1;min-width:0}
+.proj-picked .pp-name{font-size:14px;font-weight:600;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-picked .pp-no{font-size:11px;color:var(--primary);font-family:Menlo,Consolas,monospace;margin-top:2px}
+.proj-picked .pp-meta{font-size:11px;color:var(--text-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-picked .pp-chg{font-size:12px;color:var(--primary);font-weight:600;flex-shrink:0}
+
+/* 项目列表项（单选） */
+.proj-item{
+  background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;border:1.5px solid #fff;
+  cursor:pointer;transition:.18s;display:flex;gap:10px;align-items:flex-start;
+}
+.proj-item:active{background:#fafbfd}
+.proj-item.selected{border-color:var(--primary);background:#f5f8ff}
+.proj-item .pj-radio{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid #c8d3eb;flex-shrink:0;margin-top:3px;
+  display:flex;align-items:center;justify-content:center;background:#fff;
+}
+.proj-item.selected .pj-radio{border-color:var(--primary)}
+.proj-item.selected .pj-radio::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--primary)}
+.proj-item .pj-body{flex:1;min-width:0}
+.proj-item .pj-name{font-size:14px;font-weight:600;color:var(--text-title);line-height:1.4}
+.proj-item .pj-no{font-size:11px;color:var(--primary);font-family:Menlo,Consolas,monospace;margin-top:3px}
+.proj-item .pj-meta{font-size:11px;color:var(--text-muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:10px}
+.proj-item .pj-meta span{display:inline-flex;align-items:center;gap:3px}
+.proj-item .pj-meta svg{width:12px;height:12px}
+.sys-badge{
+  font-size:10px;font-weight:500;color:var(--primary);background:#eef2fb;
+  padding:2px 8px;border-radius:9px;margin-left:6px;display:inline-flex;align-items:center;gap:3px;
+}
+.sys-badge svg{width:11px;height:11px}
+</style>
+</head>
+<body style="background:#F4F6FB;padding-bottom:90px">
+
+<header class="app-bar" style="padding-bottom:14px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="check-list.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">发起安全环保检查</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        草稿
+      </a>
+    </div>
+  </div>
+  <div class="top-tabs">
+    <span class="t-item active">表单信息</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">附件</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">参与人</span>
+  </div>
+</header>
+
+<!-- 表单标题 -->
+<div class="card">
+  <div class="card-pad" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:16px;font-weight:600;color:var(--text-title);display:flex;align-items:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2656BB" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        长沙矿山院安全检查记录
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">序号自动生成 · 编号 CKY-AQJC-2026-XX</div>
+    </div>
+    <span class="title-badge info">填写中</span>
+  </div>
+</div>
+
+<!-- 检查范围与类型（顶部优先选择 · 紧凑布局） -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>检查范围与类型</div>
+
+  <!-- 检查范围 · 分段控件 -->
+  <div class="form-row col" style="padding-bottom:8px">
+    <div class="label req" style="margin-bottom:8px">检查范围</div>
+    <div class="scope-seg">
+      <span class="ss-item" onclick="selectScope(this,'office')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/></svg>院办公区
+      </span>
+      <span class="ss-item active" onclick="selectScope(this,'hq')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>院本部
+      </span>
+      <span class="ss-item" onclick="selectScope(this,'project')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>项目部
+      </span>
+    </div>
+  </div>
+
+  <!-- 院办公区 / 院本部：填写检查位置 -->
+  <div id="scopeLocation">
+    <div class="form-row">
+      <div class="label req" id="locLabel">检查位置</div>
+      <input class="form-input" id="locInput" placeholder="具体楼栋 / 楼层 / 区域" value="采矿楼 1-6 层" />
+      <span class="arrow">›</span>
+    </div>
+  </div>
+
+  <!-- 项目部：从项目管理系统选择 -->
+  <div id="scopeProject" style="display:none">
+    <div class="form-row col" style="padding-top:8px">
+      <div class="label req" style="margin-bottom:8px">选择项目</div>
+      <!-- 未选择 -->
+      <div id="projEmpty" class="ru-add" onclick="openProjModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6"/></svg>
+        <span>从项目管理系统选择项目</span>
+        <span class="ru-add-arrow">›</span>
+      </div>
+      <!-- 已选择 -->
+      <div id="projPicked" class="proj-picked" style="display:none" onclick="openProjModal()">
+        <span class="pp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2z"/></svg></span>
+        <div class="pp-body">
+          <div class="pp-name" id="pjPickedName">—</div>
+          <div class="pp-no" id="pjPickedNo">—</div>
+          <div class="pp-meta" id="pjPickedMeta">—</div>
+        </div>
+        <span class="pp-chg">更换 ›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 检查类型 · 单行横向滚动 -->
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div style="display:flex;align-items:center;width:100%;margin-bottom:8px">
+      <div class="label req" style="width:auto;flex:1">检查类型</div>
+      <span class="text-muted text-xs">左右滑动选择</span>
+    </div>
+    <div class="type-grid">
+      <span class="type-chip active">月度领导带班安全检查</span>
+      <span class="type-chip">月度检查</span>
+      <span class="type-chip">项目安全检查</span>
+      <span class="type-chip">环保专项检查</span>
+      <span class="type-chip">消防专项检查</span>
+      <span class="type-chip">特种设备专项检查</span>
+      <span class="type-chip">冬季专项检查</span>
+      <span class="type-chip">防汛度汛专项检查</span>
+      <span class="type-chip">春节前安全检查</span>
+      <span class="type-chip">春节后安全检查</span>
+      <span class="type-chip">五一节前后安全检查</span>
+      <span class="type-chip">日常安全巡查</span>
+    </div>
+  </div>
+</div>
+
+<!-- 检查基本信息 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>检查基本信息</div>
+
+  <div class="form-row">
+    <div class="label req">检查时间</div>
+    <input class="form-input" value="2026-05-26" />
+    <span class="arrow">›</span>
+  </div>
+
+  <div class="form-row">
+    <div class="label req">检查名称</div>
+    <input class="form-input" placeholder="请输入本次检查的具体名称" value="5 月份领导带班月度安全检查" />
+  </div>
+
+  <div class="form-row">
+    <div class="label req">检查对象</div>
+    <div class="value link">物业运营部、智能矿山事业部 ›</div>
+  </div>
+
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div style="display:flex;align-items:center;width:100%">
+      <div class="label req" style="width:auto;flex:1">关联风险单元</div>
+      <span class="text-muted text-xs">已关联 3 个 · A 0 · B 1 · C 2</span>
+    </div>
+    <div class="ru-picked">
+      <div class="ru-chip lvl-B">
+        <span class="ru-lv">B</span>
+        <div class="ru-info"><div class="ru-name">采矿楼 · 配电间</div><div class="ru-sub">配电间 · 电工 · 变配电设施</div></div>
+        <span class="ru-x">×</span>
+      </div>
+      <div class="ru-chip lvl-C">
+        <span class="ru-lv">C</span>
+        <div class="ru-info"><div class="ru-name">采矿楼 · 电梯间</div><div class="ru-sub">乘梯 · 客梯 2 台</div></div>
+        <span class="ru-x">×</span>
+      </div>
+      <div class="ru-chip lvl-C">
+        <span class="ru-lv">C</span>
+        <div class="ru-info"><div class="ru-name">采矿楼 · 消防泵房</div><div class="ru-sub">维护作业 · 消防水泵</div></div>
+        <span class="ru-x">×</span>
+      </div>
+    </div>
+    <div class="ru-add" onclick="document.getElementById('ruMask').classList.add('show')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>从风险单元清单中选择</span>
+      <span class="ru-add-arrow">›</span>
+    </div>
+  </div>
+</div>
+
+<!-- 检查人员 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>检查人员</div>
+
+  <div class="form-row">
+    <div class="label req">公司领导</div>
+    <div class="people-input">
+      <span class="pp"><span class="av">褚</span>褚洪涛<span class="x">×</span></span>
+      <span class="pp"><span class="av">李</span>李诚星<span class="x">×</span></span>
+      <span class="add-pp">+</span>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="label">领导人数</div>
+    <div class="value">2 人 <span class="text-muted">（自动统计）</span></div>
+  </div>
+
+  <div class="form-row">
+    <div class="label">其他人员</div>
+    <div class="people-input">
+      <span class="pp"><span class="av">谭</span>谭文玮<span class="x">×</span></span>
+      <span class="pp"><span class="av">曹</span>曹进修<span class="x">×</span></span>
+      <span class="pp"><span class="av">熊</span>熊文胜<span class="x">×</span></span>
+      <span class="add-pp">+</span>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="label req">记录人</div>
+    <input class="form-input" value="熊文胜" />
+  </div>
+</div>
+
+<!-- 检查情况 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>检查情况</div>
+  <div class="form-row col">
+    <div class="label req">检查内容描述</div>
+    <textarea class="form-textarea" placeholder="请描述本次检查的范围、整体情况，以及发现的具体问题…">本次为 5 月份月度领导带班安全检查，重点对采矿楼配电、消防器材、消防通道及办公区域用电情况开展全面排查。
+
+检查情况：
+1. 采矿楼三楼东侧配电柜接地线脱落；
+2. 一楼消防通道堆放杂物 2 处；
+3. 各楼层灭火器年检标志齐全，压力正常。</textarea>
+    <div class="media-toolbar">
+      <span class="mt-btn voice" onclick="document.getElementById('voiceMask').classList.add('show')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+        语音输入
+      </span>
+      <span class="mt-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-6 0v4M3 13h18l-1.34 7.36A2 2 0 0 1 17.7 22H6.3a2 2 0 0 1-1.96-1.64L3 13z"/></svg>
+        模板
+      </span>
+    </div>
+  </div>
+
+  <!-- 现场照片/视频 -->
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">现场照片 / 视频（最多 9 张）</div>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-cell"><div class="preview">现场照片<br>1</div><span class="del">×</span></div>
+    <div class="upload-cell">
+      <div class="preview" style="background:linear-gradient(135deg,#f29100,#ffc266);color:#fff">现场照片<br>2</div>
+      <span class="del">×</span>
+    </div>
+    <div class="upload-cell">
+      <div class="preview" style="background:linear-gradient(135deg,#1a4299,#5680DD);color:#fff">现场视频</div>
+      <span class="video-tag">
+        <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        00:08
+      </span>
+      <span class="play-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </span>
+      <span class="del">×</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>拍照 / 相册</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <span>录制视频</span>
+    </div>
+  </div>
+</div>
+
+<!-- 关联隐患整改单 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>关联隐患整改单
+    <span class="title-badge" style="margin-left:auto;background:#fff5e5;color:var(--warning);font-weight:600">已关联 2 项</span>
+  </div>
+
+  <div class="form-row col" style="padding-bottom:6px">
+    <div class="hz-pick" onclick="document.getElementById('hzMask').classList.add('show')">
+      <div class="hz-pick-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><circle cx="12" cy="12" r="1"/></svg>
+      </div>
+      <div class="hz-pick-text">
+        <div class="hp-title">从隐患列表选择关联</div>
+        <div class="hp-desc">检查中发现的问题登记为隐患后即可关联</div>
+      </div>
+      <span class="hz-pick-arrow">›</span>
+    </div>
+  </div>
+
+  <!-- 已关联隐患条目 -->
+  <div class="hz-linked-list">
+    <div class="hz-linked">
+      <div class="hl-head">
+        <span class="hl-no">YH-2026-05-058</span>
+        <span class="tag tag-warning">较大</span>
+        <span class="hl-del" onclick="this.closest('.hz-linked').remove()">×</span>
+      </div>
+      <div class="hl-title">采矿楼三楼东侧配电柜接地线脱落</div>
+      <div class="hl-meta">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>物业运营部</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>限期 2026-05-31</span>
+      </div>
+    </div>
+
+    <div class="hz-linked">
+      <div class="hl-head">
+        <span class="hl-no">YH-2026-05-059</span>
+        <span class="tag tag-muted">一般</span>
+        <span class="hl-del" onclick="this.closest('.hz-linked').remove()">×</span>
+      </div>
+      <div class="hl-title">采矿楼一楼消防通道堆放杂物 2 处</div>
+      <div class="hl-meta">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>智能矿山事业部</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>限期 2026-05-30</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自动统计行 -->
+  <div class="form-row" style="background:#f8faff">
+    <div class="label">关联隐患总数</div>
+    <div class="value">
+      <span style="font-size:18px;font-weight:700;color:var(--warning)">2</span>
+      <span class="text-muted" style="font-size:12px">&nbsp;项 · 自动统计</span>
+    </div>
+  </div>
+</div>
+
+<!-- 上传附件 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>上传附件
+    <span class="text-muted text-xs" style="margin-left:auto;font-weight:500">支持 PDF / Word / 图片，共 3 个</span>
+  </div>
+
+  <!-- 附件列表 -->
+  <div class="file-list">
+    <div class="file-item">
+      <div class="fi-ic blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      </div>
+      <div class="fi-info">
+        <div class="fi-name">2026-05-月度安全检查记录.pdf</div>
+        <div class="fi-meta"><span>1.8 MB</span><span>·</span><span>刚刚上传</span></div>
+      </div>
+      <a class="fi-act" href="javascript:;">×</a>
+    </div>
+    <div class="file-item">
+      <div class="fi-ic orange">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h2"/></svg>
+      </div>
+      <div class="fi-info">
+        <div class="fi-name">整改通知单（盖章版）.pdf</div>
+        <div class="fi-meta"><span>0.9 MB</span><span>·</span><span>刚刚上传</span></div>
+      </div>
+      <a class="fi-act" href="javascript:;">×</a>
+    </div>
+    <div class="file-item">
+      <div class="fi-ic green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      </div>
+      <div class="fi-info">
+        <div class="fi-name">现场补拍-配电箱.jpg</div>
+        <div class="fi-meta"><span>2.4 MB</span><span>·</span><span>1 分钟前</span></div>
+      </div>
+      <a class="fi-act" href="javascript:;">×</a>
+    </div>
+  </div>
+
+  <!-- 上传入口 -->
+  <div class="upload-add" onclick="this.style.background='#eef2fb'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <span>添加附件</span>
+    <span class="upload-add-tip">点击上传 / 从云盘选择</span>
+  </div>
+</div>
+
+<div style="height:16px"></div>
+
+<!-- 底部操作栏 -->
+<div class="action-bar">
+  <span class="more-btn">···</span>
+  <button class="btn btn-default" style="flex:1">保存草稿</button>
+  <button class="btn btn-primary" style="flex:1.5">提交检查记录</button>
+</div>
+
+<!-- 风险单元选择弹窗 -->
+<div id="ruMask" class="ru-mask">
+  <div class="ru-sheet">
+    <div class="ru-sheet-head">
+      <div class="rsh-row">
+        <div class="rsh-title">选择风险单元<span class="rsh-cnt">共 60 个</span></div>
+        <span class="rsh-close" onclick="document.getElementById('ruMask').classList.remove('show')">×</span>
+      </div>
+      <div class="ru-sheet-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input placeholder="搜索场所 / 岗位 / 设备" />
+      </div>
+    </div>
+
+    <!-- 筛选区 -->
+    <div class="ru-filter-block">
+      <div class="ru-filter-row">
+        <span class="frl">风险等级</span>
+        <div class="frl-chips">
+          <span class="rsf-chip active">全部<span class="rsf-cnt">60</span></span>
+          <span class="rsf-chip lv-A"><span class="lv-dot A"></span>A 级<span class="rsf-cnt">2</span></span>
+          <span class="rsf-chip lv-B"><span class="lv-dot B"></span>B 级<span class="rsf-cnt">12</span></span>
+          <span class="rsf-chip lv-C"><span class="lv-dot C"></span>C 级<span class="rsf-cnt">28</span></span>
+          <span class="rsf-chip lv-D"><span class="lv-dot D"></span>D 级<span class="rsf-cnt">18</span></span>
+        </div>
+      </div>
+      <div class="ru-filter-row">
+        <span class="frl">所在区域</span>
+        <div class="frl-chips">
+          <span class="rsf-chip active">全部</span>
+          <span class="rsf-chip">院区<span class="rsf-cnt">11</span></span>
+          <span class="rsf-chip">资环事业部<span class="rsf-cnt">12</span></span>
+          <span class="rsf-chip">检测中心<span class="rsf-cnt">17</span></span>
+          <span class="rsf-chip">后湖基地<span class="rsf-cnt">20</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 列表 -->
+    <div class="ru-sheet-list">
+
+      <div class="ru-group-title"><span class="rg-name">院区</span><span class="rg-cnt">11 个</span></div>
+
+      <div class="ru-item selected" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-B">B</span>
+            <span class="rb-name">采矿楼 · 配电间</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">岗位</span> 电工 · <span class="rm-lbl">设施</span> 变配电、高压柜、低压柜</div>
+          <div class="rb-foot">
+            <span class="rf-tag">触电</span><span class="rf-tag">火灾</span><span class="rf-tag">其他爆炸</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item selected" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-C">C</span>
+            <span class="rb-name">采矿楼 · 电梯间</span>
+            <span class="rb-mgr">部门级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">岗位</span> 乘梯 · <span class="rm-lbl">设施</span> 客梯 2 台、应急救援装置</div>
+          <div class="rb-foot">
+            <span class="rf-tag">电梯事故</span><span class="rf-tag">机械伤害</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item selected" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-C">C</span>
+            <span class="rb-name">采矿楼 · 消防泵房</span>
+            <span class="rb-mgr">部门级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">岗位</span> 维护作业 · <span class="rm-lbl">设施</span> 消防水泵、稳压罐、配电</div>
+          <div class="rb-foot">
+            <span class="rf-tag">触电</span><span class="rf-tag">机械伤害</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-D">D</span>
+            <span class="rb-name">采矿楼 · 办公室</span>
+            <span class="rb-mgr">岗位级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">岗位</span> 办公人员 · <span class="rm-lbl">设施</span> 办公设施、空调、饮水机</div>
+          <div class="rb-foot">
+            <span class="rf-tag">火灾</span><span class="rf-tag">触电</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-B">B</span>
+            <span class="rb-name">院内道路 · 停车场</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 车辆行驶 / 地下车库通行 · <span class="rm-lbl">设施</span> 机动车辆、地下车库、道闸</div>
+          <div class="rb-foot">
+            <span class="rf-tag">车辆伤害</span><span class="rf-tag">物体打击</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-group-title"><span class="rg-name">资源利用与环保事业部</span><span class="rg-cnt">12 个</span></div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-B">B</span>
+            <span class="rb-name">磨矿实验室 1</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 磨矿、球磨、筛分 · <span class="rm-lbl">设施</span> 棒磨机、锥形球磨机</div>
+          <div class="rb-foot">
+            <span class="rf-tag">机械伤害</span><span class="rf-tag">物体打击</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-C">C</span>
+            <span class="rb-name">浮选实验室 1</span>
+            <span class="rb-mgr">部门级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 浮选、磁选、过滤 · <span class="rm-lbl">设施</span> 单槽浮选机、高梯度磁选机</div>
+          <div class="rb-foot">
+            <span class="rf-tag">触电</span><span class="rf-tag">机械伤害</span><span class="rf-tag">中毒窒息</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-group-title"><span class="rg-name">检测中心本部</span><span class="rg-cnt">17 个</span></div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-A">A</span>
+            <span class="rb-name">办公楼 · 一号实验室</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 潜孔冲击、液力、钻机、起重 · <span class="rm-lbl">设施</span> 钻机、切割机、起重设备</div>
+          <div class="rb-foot">
+            <span class="rf-tag">起重伤害</span><span class="rf-tag">机械伤害</span><span class="rf-tag">物体打击</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-B">B</span>
+            <span class="rb-name">办公楼 · 二号实验室</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 机械强度、高低温交变湿热 · <span class="rm-lbl">设施</span> 500t 拉力试验机</div>
+          <div class="rb-foot">
+            <span class="rf-tag">起重伤害</span><span class="rf-tag">机械伤害</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-group-title"><span class="rg-name">后湖实验基地</span><span class="rg-cnt">20 个</span></div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-A">A</span>
+            <span class="rb-name">智能矿山总装车间</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">岗位</span> 焊工、装配工、吊装工 · <span class="rm-lbl">设施</span> 电焊机、行车、车床、叉车</div>
+          <div class="rb-foot">
+            <span class="rf-tag">起重伤害</span><span class="rf-tag">机械伤害</span><span class="rf-tag">车辆伤害</span><span class="rf-tag">触电</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ru-item" onclick="this.classList.toggle('selected')">
+        <span class="ru-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ru-body">
+          <div class="rb-head">
+            <span class="ru-lv-tag lvl-B">B</span>
+            <span class="rb-name">充填 · 激发剂生产模拟系统</span>
+            <span class="rb-mgr">公司级</span>
+          </div>
+          <div class="rb-meta"><span class="rm-lbl">作业</span> 模拟激发剂生产实验 · <span class="rm-lbl">设施</span> 激发剂生产模拟系统、空压机</div>
+          <div class="rb-foot">
+            <span class="rf-tag">机械伤害</span><span class="rf-tag">中毒窒息</span><span class="rf-tag">容器爆炸</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ru-sheet-foot">
+      <div class="rsf-info">已选 <span class="rsf-cnt">3</span> 个<span class="rsf-sub">· 最高 B 级</span></div>
+      <button class="btn btn-default" onclick="document.getElementById('ruMask').classList.remove('show')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('ruMask').classList.remove('show')">确认关联</button>
+    </div>
+  </div>
+</div>
+
+<!-- 关联隐患选择弹窗 -->
+<div id="hzMask" class="hz-mask">
+  <div class="hz-sheet">
+    <div class="hz-sheet-head">
+      <div class="hsh-title">关联隐患整改单</div>
+      <span class="hsh-close" onclick="document.getElementById('hzMask').classList.remove('show')">×</span>
+    </div>
+
+    <div class="hz-sheet-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input placeholder="搜索隐患编号 / 标题 / 地点" />
+    </div>
+
+    <div class="hz-sheet-filter">
+      <span class="hsf-chip active">全部 12</span>
+      <span class="hsf-chip">本次检查 2</span>
+      <span class="hsf-chip">待整改 7</span>
+      <span class="hsf-chip">较大</span>
+      <span class="hsf-chip">一般</span>
+      <span class="hsf-chip">物业运营部</span>
+      <span class="hsf-chip">智能矿山</span>
+    </div>
+
+    <div class="hz-sheet-list">
+      <div class="hz-sheet-item selected" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-05-058</span>
+            <span class="tag tag-warning">较大</span>
+            <span class="tag tag-blue">本次检查</span>
+          </div>
+          <div class="hsi-title">采矿楼三楼东侧配电柜接地线脱落</div>
+          <div class="hsi-meta">
+            <span>物业运营部</span>
+            <span>限期 2026-05-31</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hz-sheet-item selected" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-05-059</span>
+            <span class="tag tag-muted">一般</span>
+            <span class="tag tag-blue">本次检查</span>
+          </div>
+          <div class="hsi-title">采矿楼一楼消防通道堆放杂物 2 处</div>
+          <div class="hsi-meta">
+            <span>智能矿山事业部</span>
+            <span>限期 2026-05-30</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hz-sheet-item" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-05-051</span>
+            <span class="tag tag-error">重大</span>
+          </div>
+          <div class="hsi-title">充填实验室西头临建房墙体严重开裂</div>
+          <div class="hsi-meta">
+            <span>资环事业部</span>
+            <span>限期 2026-05-28</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hz-sheet-item" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-05-046</span>
+            <span class="tag tag-warning">较大</span>
+          </div>
+          <div class="hsi-title">检测中心配电间空开标识缺失</div>
+          <div class="hsi-meta">
+            <span>检测中心</span>
+            <span>限期 2026-06-05</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hz-sheet-item" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-05-040</span>
+            <span class="tag tag-muted">一般</span>
+          </div>
+          <div class="hsi-title">后湖装配车间应急照明 2 处不亮</div>
+          <div class="hsi-meta">
+            <span>智能矿山事业部</span>
+            <span>限期 2026-06-08</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hz-sheet-item" onclick="this.classList.toggle('selected')">
+        <span class="hz-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="hsi-body">
+          <div class="hsi-head">
+            <span class="hsi-no">YH-2026-04-038</span>
+            <span class="tag tag-muted">一般</span>
+          </div>
+          <div class="hsi-title">科研楼楼梯间堆放包装废料</div>
+          <div class="hsi-meta">
+            <span>工程设计院</span>
+            <span>限期 2026-05-29</span>
+          </div>
+        </div>
+      </div>
+
+      <a href="hazard-create.html" class="hz-sheet-item" style="justify-content:center;color:var(--primary);font-weight:600;background:#f5f8ff;border-style:dashed;border-color:var(--primary-light);text-decoration:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span>未在列表中？登记新隐患</span>
+      </a>
+    </div>
+
+    <div class="hz-sheet-foot">
+      <div class="hsf-info">已选 <b>2</b> 项</div>
+      <button class="btn btn-default" onclick="document.getElementById('hzMask').classList.remove('show')" style="padding:8px 16px;font-size:13px">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('hzMask').classList.remove('show')" style="padding:8px 18px;font-size:13px">确认关联</button>
+    </div>
+  </div>
+</div>
+
+<!-- 项目选择弹窗（来自项目管理系统） -->
+<div id="projMask" class="hz-mask">
+  <div class="hz-sheet">
+    <div class="hz-sheet-head">
+      <div class="hsh-title">选择项目
+        <span class="sys-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8"/></svg>
+          项目管理系统
+        </span>
+      </div>
+      <span class="hsh-close" onclick="document.getElementById('projMask').classList.remove('show')">×</span>
+    </div>
+
+    <div class="hz-sheet-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input placeholder="搜索项目名称 / 项目编号" />
+    </div>
+
+    <div class="hz-sheet-filter">
+      <span class="hsf-chip active">全部 6</span>
+      <span class="hsf-chip">在建</span>
+      <span class="hsf-chip">EPC 总承包</span>
+      <span class="hsf-chip">技改</span>
+      <span class="hsf-chip">环保治理</span>
+    </div>
+
+    <div class="hz-sheet-list">
+      <div class="proj-item" data-name="某铜矿充填系统工程总承包项目" data-no="XM-2025-018" data-meta="某矿业（江西）· 在建 · 充填事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">某铜矿充填系统工程总承包项目</div>
+          <div class="pj-no">XM-2025-018</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>江西 · 鹰潭</span>
+            <span class="tag tag-blue">在建</span>
+            <span>充填事业部</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-item" data-name="深部开采智能化改造项目" data-no="XM-2025-042" data-meta="某金矿（山东）· 在建 · 智能矿山事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">深部开采智能化改造项目</div>
+          <div class="pj-no">XM-2025-042</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>山东 · 烟台</span>
+            <span class="tag tag-blue">在建</span>
+            <span>智能矿山事业部</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-item" data-name="尾矿库环保治理 EPC 项目" data-no="XM-2024-105" data-meta="某选矿厂（云南）· 在建 · 资环事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">尾矿库环保治理 EPC 项目</div>
+          <div class="pj-no">XM-2024-105</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>云南 · 个旧</span>
+            <span class="tag tag-blue">在建</span>
+            <span>资环事业部</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-item" data-name="矿山生态修复示范工程" data-no="XM-2025-073" data-meta="某矿区（内蒙古）· 在建 · 资环事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">矿山生态修复示范工程</div>
+          <div class="pj-no">XM-2025-073</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>内蒙古 · 包头</span>
+            <span class="tag tag-blue">在建</span>
+            <span>资环事业部</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-item" data-name="选矿厂工艺优化技改项目" data-no="XM-2026-006" data-meta="某选矿厂（湖南）· 在建 · 选矿事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">选矿厂工艺优化技改项目</div>
+          <div class="pj-no">XM-2026-006</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>湖南 · 郴州</span>
+            <span class="tag tag-blue">在建</span>
+            <span>选矿事业部</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-item" data-name="露天矿边坡监测系统项目" data-no="XM-2025-088" data-meta="某露天矿（安徽）· 在建 · 智能矿山事业部" onclick="selectProj(this)">
+        <span class="pj-radio"></span>
+        <div class="pj-body">
+          <div class="pj-name">露天矿边坡监测系统项目</div>
+          <div class="pj-no">XM-2025-088</div>
+          <div class="pj-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>安徽 · 马鞍山</span>
+            <span class="tag tag-blue">在建</span>
+            <span>智能矿山事业部</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hz-sheet-foot">
+      <div class="hsf-info">来自<b>项目管理系统</b> · 共 6 个在建项目</div>
+      <button class="btn btn-default" onclick="document.getElementById('projMask').classList.remove('show')" style="padding:8px 16px;font-size:13px">取消</button>
+      <button class="btn btn-primary" onclick="confirmProj()" style="padding:8px 18px;font-size:13px">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 录音浮窗 -->
+<div id="voiceMask" class="voice-mask">
+  <div class="voice-panel">
+    <div class="v-mic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+    </div>
+    <div class="v-tip">长按说话，松开自动转写</div>
+    <div class="v-text">"…配电箱接地线脱落，限期 24 小时内修复…"</div>
+    <div class="v-actions">
+      <button class="btn btn-default btn-block" onclick="document.getElementById('voiceMask').classList.remove('show')">取消</button>
+      <button class="btn btn-primary btn-block" onclick="document.getElementById('voiceMask').classList.remove('show')">使用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 检查范围切换：院办公区 / 院本部 → 填写检查位置；项目部 → 从项目系统选择
+function selectScope(el, type){
+  document.querySelectorAll('.scope-seg .ss-item').forEach(function(o){o.classList.remove('active')});
+  el.classList.add('active');
+  var isProject = type === 'project';
+  document.getElementById('scopeLocation').style.display = isProject ? 'none' : 'block';
+  document.getElementById('scopeProject').style.display = isProject ? 'block' : 'none';
+  if(!isProject){
+    var lbl = document.getElementById('locLabel');
+    var inp = document.getElementById('locInput');
+    if(type === 'office'){
+      lbl.textContent = '检查位置（院办公区）';
+      inp.placeholder = '如行政办公楼 / 园区道路 / 食堂';
+    }else{
+      lbl.textContent = '检查位置（院本部）';
+      inp.placeholder = '如采矿楼 / 实验楼 / 厂区车间';
+    }
+  }
+}
+
+// 项目选择弹窗
+function openProjModal(){ document.getElementById('projMask').classList.add('show'); }
+function selectProj(el){
+  document.querySelectorAll('#projMask .proj-item').forEach(function(i){i.classList.remove('selected')});
+  el.classList.add('selected');
+}
+function confirmProj(){
+  var sel = document.querySelector('#projMask .proj-item.selected');
+  if(sel){
+    document.getElementById('pjPickedName').textContent = sel.getAttribute('data-name');
+    document.getElementById('pjPickedNo').textContent = sel.getAttribute('data-no');
+    document.getElementById('pjPickedMeta').textContent = sel.getAttribute('data-meta');
+    document.getElementById('projPicked').style.display = 'flex';
+    document.getElementById('projEmpty').style.display = 'none';
+  }
+  document.getElementById('projMask').classList.remove('show');
+}
+
+// 检查类型单选
+document.querySelectorAll('.type-grid .type-chip').forEach(function(chip){
+  chip.addEventListener('click', function(){
+    document.querySelectorAll('.type-grid .type-chip').forEach(function(c){c.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

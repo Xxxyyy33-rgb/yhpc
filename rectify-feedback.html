@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>整改反馈 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+.after-head{
+  display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);
+  padding:0 16px 8px;
+}
+.after-head .dot-c{width:6px;height:6px;border-radius:50%;background:var(--success)}
+.after-head .ah-tip{margin-left:auto;font-size:11px;color:var(--text-muted)}
+</style>
+</head>
+<body style="background:#F4F6FB;padding-bottom:90px">
+
+<header class="app-bar" style="padding-bottom:14px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="hazard-detail.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">整改反馈</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+        草稿
+      </a>
+    </div>
+  </div>
+  <div class="top-tabs">
+    <span class="t-item active">反馈表单</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">整改报告</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">流程</span>
+  </div>
+</header>
+
+<!-- 关联隐患信息 -->
+<div class="card">
+  <div class="card-pad" style="padding:14px 16px">
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">关联隐患</div>
+    <div style="font-size:15px;font-weight:600;color:var(--text-title);line-height:1.5">充填实验室最西头的临建房墙体严重裂开</div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <span class="tag tag-blue">安全管理</span>
+      <span class="tag tag-warning">主体结构</span>
+      <span class="tag tag-error">高风险</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed #eef1f5;font-size:12px;color:var(--text-muted)">
+      <span>CKY-YHZG-2026-04-08</span>
+      <span>整改截止：2026-05-30</span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改情况 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>整改情况
+    <span class="title-badge info" style="margin-left:auto">附件一</span>
+  </div>
+  <div class="form-row col">
+    <div class="label req">整改内容</div>
+    <textarea class="form-textarea" placeholder="请描述实际整改内容…">已对充填实验室最西头临建房进行拆除处理：
+1. 5/13 已停止使用，划设警示带；
+2. 5/16 委托湖南建科评估，5/22 出具《临建房安全鉴定报告》（C 级危房）；
+3. 5/24 由具备资质的湖南拆建工程有限公司完成拆除，废料 4.2t 已分类清运；
+4. 5/25 现场清理完毕，恢复地面整洁。</textarea>
+    <div class="media-toolbar">
+      <span class="mt-btn voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>语音输入</span>
+      <span class="mt-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-6 0v4M3 13h18l-1.34 7.36A2 2 0 0 1 17.7 22H6.3a2 2 0 0 1-1.96-1.64L3 13z"/></svg>模板</span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改后照片 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>整改后照片
+    <span class="title-badge" style="margin-left:auto;background:#e8fcf4;color:var(--success);font-weight:600">必传</span>
+  </div>
+  <div class="after-head">
+    <span class="dot-c"></span>
+    <span>请拍摄整改后的现场照片或视频</span>
+    <span class="ah-tip">最多 9 张</span>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">已拆除<br>全景</div><span class="del">×</span></div>
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">地面<br>恢复</div><span class="del">×</span></div>
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">废料<br>清运</div><span class="del">×</span></div>
+    <div class="upload-cell">
+      <div class="preview" style="background:linear-gradient(135deg,#1a4299,#5680DD);color:#fff">整改视频</div>
+      <span class="video-tag"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>00:18</span>
+      <span class="play-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      <span class="del">×</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>拍照 / 相册</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <span>录制视频</span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改报告 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>整改报告（附件二）
+    <span class="title-badge purple" style="margin-left:auto">必传</span>
+  </div>
+  <div class="card-pad" style="padding-top:0">
+    <div class="list-item" style="border-bottom:none">
+      <div class="li-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="li-info">
+        <div class="li-title">资环事业部充填实验室整改报告.pdf</div>
+        <div class="li-desc">2.4 MB · 2026-05-26 上传</div>
+      </div>
+      <span class="li-arrow">×</span>
+    </div>
+    <a href="javascript:;" class="btn btn-outline btn-block" style="margin-top:6px;height:38px;font-size:13px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      上传整改报告（PDF / Word / 图片）
+    </a>
+  </div>
+</div>
+
+<div style="height:16px"></div>
+
+<!-- 底部操作栏 -->
+<div class="action-bar">
+  <button class="btn btn-primary btn-block">提交反馈给安环部</button>
+</div>
+
+</body>
+</html>

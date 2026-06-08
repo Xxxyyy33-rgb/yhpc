@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>隐患登记 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+/* 检查范围 · 单行分段控件 */
+.scope-seg{display:flex;background:#f4f6fb;border-radius:10px;padding:3px;width:100%}
+.scope-seg .ss-item{
+  flex:1;text-align:center;padding:8px 4px;border-radius:8px;font-size:13px;color:var(--text-regular);
+  cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.scope-seg .ss-item svg{width:14px;height:14px;opacity:.65}
+.scope-seg .ss-item.active{background:#fff;color:var(--primary);font-weight:600;box-shadow:0 1px 3px rgba(38,86,187,.15)}
+.scope-seg .ss-item.active svg{opacity:1}
+
+/* 选择项目入口 */
+.proj-add{
+  display:flex;align-items:center;gap:6px;padding:10px 12px;border-radius:10px;
+  border:1.5px dashed var(--primary-light);background:#f8faff;color:var(--primary);
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.proj-add svg{width:16px;height:16px}
+.proj-add .pa-arrow{margin-left:auto;font-size:16px}
+.proj-picked{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;background:#fff;
+  border:1px solid var(--primary-light);box-shadow:0 2px 6px rgba(38,86,187,.06);cursor:pointer;
+}
+.proj-picked .pp-ic{
+  width:38px;height:38px;border-radius:10px;background:#eef2fb;color:var(--primary);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.proj-picked .pp-ic svg{width:19px;height:19px}
+.proj-picked .pp-body{flex:1;min-width:0}
+.proj-picked .pp-name{font-size:14px;font-weight:600;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-picked .pp-no{font-size:11px;color:var(--primary);font-family:Menlo,Consolas,monospace;margin-top:2px}
+.proj-picked .pp-meta{font-size:11px;color:var(--text-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-picked .pp-chg{font-size:12px;color:var(--primary);font-weight:600;flex-shrink:0}
+
+/* 项目选择弹层 · 搜索 + 列表 */
+.proj-search{
+  margin:10px 16px 4px;background:#f4f6fb;border-radius:10px;display:flex;align-items:center;gap:8px;padding:9px 12px;
+}
+.proj-search svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0}
+.proj-search input{flex:1;border:none;outline:none;font-size:14px;background:transparent}
+.proj-opt{
+  padding:12px 16px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid #f4f6fb;cursor:pointer;
+}
+.proj-opt:active{background:#fafbfd}
+.proj-opt.selected{background:#f5f8ff}
+.proj-opt .pj-radio{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid #c8d3eb;flex-shrink:0;margin-top:3px;
+  display:flex;align-items:center;justify-content:center;background:#fff;
+}
+.proj-opt.selected .pj-radio{border-color:var(--primary)}
+.proj-opt.selected .pj-radio::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--primary)}
+.proj-opt .pj-body{flex:1;min-width:0}
+.proj-opt .pj-name{font-size:14px;font-weight:600;color:var(--text-title);line-height:1.4}
+.proj-opt .pj-no{font-size:11px;color:var(--primary);font-family:Menlo,Consolas,monospace;margin-top:3px}
+.proj-opt .pj-meta{font-size:11px;color:var(--text-muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sys-badge{
+  font-size:10px;font-weight:500;color:var(--primary);background:#eef2fb;
+  padding:2px 8px;border-radius:9px;margin-left:6px;display:inline-flex;align-items:center;gap:3px;
+}
+.sys-badge svg{width:11px;height:11px}
+</style>
+</head>
+<body style="background:#F4F6FB;padding-bottom:90px">
+
+<header class="app-bar" style="padding-bottom:14px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="hazard-list.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">隐患登记</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+        草稿
+      </a>
+    </div>
+  </div>
+  <div class="top-tabs">
+    <span class="t-item active">隐患信息</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">整改要求</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">流程</span>
+  </div>
+</header>
+
+<!-- 标题卡 -->
+<div class="card">
+  <div class="card-pad" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:16px;font-weight:600;color:var(--text-title);display:flex;align-items:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F29100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        事故隐患整改通知单
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">编号 CKY-YHZG-2026-自动生成</div>
+    </div>
+    <span class="title-badge warn">未提交</span>
+  </div>
+</div>
+
+<!-- 基本信息 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>基本信息</div>
+  <div class="form-row"><div class="label req">隐患名称</div><input class="form-input" placeholder="请输入隐患名称" value="充填实验室临建房墙体严重开裂" /></div>
+  <div class="form-row"><div class="label req">检查日期</div><input class="form-input" value="2026-05-26" /><span class="arrow">›</span></div>
+  <div class="form-row"><div class="label req">隐患来源</div><input class="form-input" value="现场检查" /><span class="arrow">›</span></div>
+
+  <!-- 隐患范围 · 分段控件 -->
+  <div class="form-row col" style="border-top:1px solid #f1f3f6;padding-bottom:8px">
+    <div class="label req" style="margin-bottom:8px">隐患范围</div>
+    <div class="scope-seg">
+      <span class="ss-item" onclick="selectScope(this,'office')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/></svg>院办公区
+      </span>
+      <span class="ss-item active" onclick="selectScope(this,'hq')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>院本部
+      </span>
+      <span class="ss-item" onclick="selectScope(this,'project')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>项目部
+      </span>
+    </div>
+  </div>
+
+  <!-- 院办公区 / 院本部：受检单位 + 所在区域 -->
+  <div id="scopeLocation">
+    <div class="form-row"><div class="label req">受检单位</div><input class="form-input" value="资环事业部 · 充填实验室" /><span class="arrow">›</span></div>
+    <div class="form-row"><div class="label req">所在区域</div><input class="form-input" value="充填实验室西区" /><span class="arrow">›</span></div>
+  </div>
+
+  <!-- 项目部：从项目管理系统选择 -->
+  <div id="scopeProject" style="display:none">
+    <div class="form-row col" style="padding-top:8px">
+      <div class="label req" style="margin-bottom:8px">选择项目</div>
+      <div id="projEmpty" class="proj-add" onclick="openProjModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6"/></svg>
+        <span>从项目管理系统选择项目</span>
+        <span class="pa-arrow">›</span>
+      </div>
+      <div id="projPicked" class="proj-picked" style="display:none" onclick="openProjModal()">
+        <span class="pp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2z"/></svg></span>
+        <div class="pp-body">
+          <div class="pp-name" id="pjPickedName">—</div>
+          <div class="pp-no" id="pjPickedNo">—</div>
+          <div class="pp-meta" id="pjPickedMeta">—</div>
+        </div>
+        <span class="pp-chg">更换 ›</span>
+      </div>
+    </div>
+    <div class="form-row"><div class="label req">所在区域</div><input class="form-input" placeholder="项目内具体部位 / 工区" value="" /><span class="arrow">›</span></div>
+  </div>
+</div>
+
+<!-- 隐患分类（22 类） -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>隐患分类
+    <span class="title-badge info" style="margin-left:auto">已选 安全管理 / 主体结构</span>
+  </div>
+
+  <!-- 隐患大类 -->
+  <div class="cls-block">
+    <div class="cls-title">
+      <span class="cls-req">*</span>
+      <span class="cls-label">隐患大类</span>
+      <span class="cls-tip">左右滑动 · 共 22 类</span>
+    </div>
+    <div class="cls-grid cls-grid-major">
+      <span class="cls-chip active">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/></svg>
+        安全管理
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        职业健康安全
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9c2 0 4 .8 5 2"/><path d="M21 3v6h-6"/></svg>
+        环境保护
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        消防安全
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        用电安全
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg>
+        设备设施
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        应急管理
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v4l1 1.5L9 9l1.5 2L9 13l1 1.5V22h4v-7.5L15 13l-1.5-2L15 9l-2-1.5L14 6V2z"/></svg>
+        化学品
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        危险作业
+      </span>
+      <span class="cls-chip">
+        <svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>
+        个体防护
+      </span>
+    </div>
+  </div>
+
+  <!-- 隐患类型 -->
+  <div class="cls-block">
+    <div class="cls-title">
+      <span class="cls-req">*</span>
+      <span class="cls-label">隐患类型</span>
+      <span class="cls-tip">基于「安全管理」联动</span>
+    </div>
+    <div class="cls-grid cls-grid-sub">
+      <span class="cls-chip-sm active">主体结构</span>
+      <span class="cls-chip-sm">环境标识</span>
+      <span class="cls-chip-sm">特种设备</span>
+      <span class="cls-chip-sm">规章制度</span>
+      <span class="cls-chip-sm">违章作业</span>
+      <span class="cls-chip-sm">教育培训</span>
+      <span class="cls-chip-sm">资质证件</span>
+      <span class="cls-chip-sm">台账记录</span>
+      <span class="cls-chip-sm">标志标识</span>
+      <span class="cls-chip-sm">其他</span>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.cls-block{padding:12px 16px;border-top:1px solid #f1f3f6}
+.cls-block:first-of-type{border-top:none}
+.cls-title{display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--text-regular);margin-bottom:8px}
+.cls-title .cls-req{color:var(--error);font-weight:600}
+.cls-title .cls-label{font-weight:600;color:var(--text-title);font-size:14px}
+.cls-title .cls-tip{font-size:11px;color:var(--text-muted);margin-left:auto}
+
+/* 大类 / 类型：单行横向滚动 */
+.cls-grid-major,.cls-grid-sub{
+  display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;
+}
+.cls-grid-major::-webkit-scrollbar,.cls-grid-sub::-webkit-scrollbar{display:none}
+
+/* 大类：图标 + 文字 行内胶囊 */
+.cls-chip{
+  flex-shrink:0;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:18px;
+  border:1px solid #e8eaed;background:#fafbfd;color:var(--text-regular);font-size:12.5px;font-weight:500;
+  cursor:pointer;transition:.18s;
+}
+.cls-chip .ci{width:15px;height:15px;color:var(--text-muted);flex-shrink:0}
+.cls-chip:active,.cls-chip:hover{border-color:var(--primary-light);background:#f5f8ff}
+.cls-chip.active{
+  background:linear-gradient(135deg,#2656BB,#5680DD);border-color:var(--primary);color:#fff;font-weight:600;
+  box-shadow:0 2px 6px rgba(38,86,187,.22);
+}
+.cls-chip.active .ci{color:#fff}
+
+/* 类型：紧凑标签 */
+.cls-chip-sm{
+  flex-shrink:0;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;padding:7px 14px;border-radius:18px;
+  border:1px solid #e8eaed;background:#fff;color:var(--text-regular);font-size:13px;font-weight:500;
+  cursor:pointer;transition:.18s;
+}
+.cls-chip-sm:active,.cls-chip-sm:hover{border-color:var(--primary-light);background:#f5f8ff}
+.cls-chip-sm.active{
+  background:linear-gradient(135deg,#2656BB,#5680DD);border-color:var(--primary);color:#fff;font-weight:600;
+  box-shadow:0 2px 6px rgba(38,86,187,.25);
+}
+</style>
+
+<!-- 隐患描述 + 多媒体 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>隐患描述</div>
+  <div class="form-row col">
+    <div class="label req">详细描述</div>
+    <textarea class="form-textarea" placeholder="请描述隐患的具体情形、位置、可能后果…">充填实验室最西头的临建房（约 28㎡，砖混结构，使用年限 12 年）墙体已经严重裂开，最大裂缝宽度 8 cm，墙面外凸明显，随时有倒塌的风险，下方为 380V 配电柜与员工通道，存在重大安全隐患。</textarea>
+    <div class="media-toolbar">
+      <span class="mt-btn voice" onclick="document.getElementById('voiceMask').classList.add('show')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+        长按说话
+      </span>
+    </div>
+  </div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">隐患照片 / 视频（必传 · 最多 9 张）</div>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#c8d3eb)">隐患照片<br>1</div><span class="del">×</span></div>
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#f29100,#ffc266);color:#fff">隐患照片<br>2</div><span class="del">×</span></div>
+    <div class="upload-cell">
+      <div class="preview" style="background:linear-gradient(135deg,#1a4299,#5680DD);color:#fff">现场视频</div>
+      <span class="video-tag">
+        <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        00:12
+      </span>
+      <span class="play-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      <span class="del">×</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>拍照 / 相册</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <span>录制视频</span>
+    </div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      <span>选择文件</span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改要求 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>整改要求</div>
+  <div class="form-row col">
+    <div class="label req">整改措施及意见</div>
+    <textarea class="form-textarea" placeholder="请明确整改具体措施…">1. 立即停止使用该临建房，划设警示带与警示标志；
+2. 委托具备资质的第三方对房屋进行安全评估；
+3. 评估通过后于 2026-05-30 前完成拆除。</textarea>
+    <div class="media-toolbar">
+      <span class="mt-btn voice" onclick="document.getElementById('voiceMask').classList.add('show')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+        语音输入
+      </span>
+    </div>
+  </div>
+  <div class="form-row"><div class="label req">整改责任人</div><input class="form-input" value="熊维 · 资环事业部" /><span class="arrow">›</span></div>
+  <div class="form-row"><div class="label req">整改截止</div><input class="form-input" value="2026-05-30" /><span class="arrow">›</span></div>
+</div>
+
+<div style="height:16px"></div>
+
+<!-- 底部操作栏 -->
+<div class="action-bar">
+  <span class="more-btn">···</span>
+  <button class="btn btn-default" style="flex:1">保存草稿</button>
+  <button class="btn btn-primary" style="flex:1.5">提交并下发通知</button>
+</div>
+
+<!-- 录音浮窗 -->
+<div id="voiceMask" class="voice-mask">
+  <div class="voice-panel">
+    <div class="v-mic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+    </div>
+    <div class="v-tip">长按说话 · 实时转写</div>
+    <div class="v-text">"…墙体最大裂缝宽度大约八公分，墙面外凸明显…"</div>
+    <div class="v-actions">
+      <button class="btn btn-default btn-block" onclick="document.getElementById('voiceMask').classList.remove('show')">取消</button>
+      <button class="btn btn-primary btn-block" onclick="document.getElementById('voiceMask').classList.remove('show')">使用</button>
+    </div>
+  </div>
+</div>
+
+<!-- 项目选择弹层（来自项目管理系统） -->
+<div id="projMask" class="bottom-sheet-mask" onclick="closeProj()"></div>
+<div id="projSheet" class="bottom-sheet">
+  <div class="bs-head">
+    <span class="cancel" onclick="closeProj()">取消</span>
+    <span class="title">选择项目
+      <span class="sys-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8"/></svg>项目管理系统</span>
+    </span>
+    <span class="confirm" onclick="confirmProj()">确定</span>
+  </div>
+  <div class="proj-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input placeholder="搜索项目名称 / 项目编号" />
+  </div>
+  <div class="bs-body">
+    <div class="proj-opt" data-name="某铜矿充填系统工程总承包项目" data-no="XM-2025-018" data-meta="江西·鹰潭 · 充填事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">某铜矿充填系统工程总承包项目</div>
+        <div class="pj-no">XM-2025-018</div>
+        <div class="pj-meta"><span>江西 · 鹰潭</span><span class="tag tag-blue">在建</span><span>充填事业部</span></div>
+      </div>
+    </div>
+    <div class="proj-opt" data-name="深部开采智能化改造项目" data-no="XM-2025-042" data-meta="山东·烟台 · 智能矿山事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">深部开采智能化改造项目</div>
+        <div class="pj-no">XM-2025-042</div>
+        <div class="pj-meta"><span>山东 · 烟台</span><span class="tag tag-blue">在建</span><span>智能矿山事业部</span></div>
+      </div>
+    </div>
+    <div class="proj-opt" data-name="尾矿库环保治理 EPC 项目" data-no="XM-2024-105" data-meta="云南·个旧 · 资环事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">尾矿库环保治理 EPC 项目</div>
+        <div class="pj-no">XM-2024-105</div>
+        <div class="pj-meta"><span>云南 · 个旧</span><span class="tag tag-blue">在建</span><span>资环事业部</span></div>
+      </div>
+    </div>
+    <div class="proj-opt" data-name="矿山生态修复示范工程" data-no="XM-2025-073" data-meta="内蒙古·包头 · 资环事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">矿山生态修复示范工程</div>
+        <div class="pj-no">XM-2025-073</div>
+        <div class="pj-meta"><span>内蒙古 · 包头</span><span class="tag tag-blue">在建</span><span>资环事业部</span></div>
+      </div>
+    </div>
+    <div class="proj-opt" data-name="选矿厂工艺优化技改项目" data-no="XM-2026-006" data-meta="湖南·郴州 · 选矿事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">选矿厂工艺优化技改项目</div>
+        <div class="pj-no">XM-2026-006</div>
+        <div class="pj-meta"><span>湖南 · 郴州</span><span class="tag tag-blue">在建</span><span>选矿事业部</span></div>
+      </div>
+    </div>
+    <div class="proj-opt" data-name="露天矿边坡监测系统项目" data-no="XM-2025-088" data-meta="安徽·马鞍山 · 智能矿山事业部" onclick="selectProj(this)">
+      <span class="pj-radio"></span>
+      <div class="pj-body">
+        <div class="pj-name">露天矿边坡监测系统项目</div>
+        <div class="pj-no">XM-2025-088</div>
+        <div class="pj-meta"><span>安徽 · 马鞍山</span><span class="tag tag-blue">在建</span><span>智能矿山事业部</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 检查范围切换
+function selectScope(el, type){
+  document.querySelectorAll('.scope-seg .ss-item').forEach(function(o){o.classList.remove('active')});
+  el.classList.add('active');
+  var isProject = type === 'project';
+  document.getElementById('scopeLocation').style.display = isProject ? 'none' : 'block';
+  document.getElementById('scopeProject').style.display = isProject ? 'block' : 'none';
+}
+
+// 项目选择弹层
+function openProjModal(){
+  document.getElementById('projMask').classList.add('show');
+  document.getElementById('projSheet').classList.add('show');
+}
+function closeProj(){
+  document.getElementById('projMask').classList.remove('show');
+  document.getElementById('projSheet').classList.remove('show');
+}
+function selectProj(el){
+  document.querySelectorAll('#projSheet .proj-opt').forEach(function(i){i.classList.remove('selected')});
+  el.classList.add('selected');
+}
+function confirmProj(){
+  var sel = document.querySelector('#projSheet .proj-opt.selected');
+  if(sel){
+    document.getElementById('pjPickedName').textContent = sel.getAttribute('data-name');
+    document.getElementById('pjPickedNo').textContent = sel.getAttribute('data-no');
+    document.getElementById('pjPickedMeta').textContent = sel.getAttribute('data-meta');
+    document.getElementById('projPicked').style.display = 'flex';
+    document.getElementById('projEmpty').style.display = 'none';
+  }
+  closeProj();
+}
+
+// 隐患大类 / 类型单选
+document.querySelectorAll('.cls-grid-major .cls-chip').forEach(function(c){
+  c.addEventListener('click', function(){
+    document.querySelectorAll('.cls-grid-major .cls-chip').forEach(function(x){x.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.cls-grid-sub .cls-chip-sm').forEach(function(c){
+  c.addEventListener('click', function(){
+    document.querySelectorAll('.cls-grid-sub .cls-chip-sm').forEach(function(x){x.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>整改验收 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 12px}
+.compare .col-h{font-size:12px;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.compare .col-h .dot-c{width:6px;height:6px;border-radius:50%;background:var(--error)}
+.compare .col-h.after .dot-c{background:var(--success)}
+.compare .upload-grid{padding:0;grid-template-columns:repeat(2,1fr)}
+.verify-radio{
+  display:flex;gap:8px;width:100%;padding:6px 0;
+}
+.verify-radio .vr{
+  flex:1;padding:10px;border-radius:10px;border:1px solid #e4e7ed;background:#fff;
+  display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-regular);justify-content:center;
+}
+.verify-radio .vr.active.pass{border-color:var(--success);background:#e8fcf4;color:var(--success);font-weight:600}
+.verify-radio .vr.active.fail{border-color:var(--error);background:#fce8ea;color:var(--error);font-weight:600}
+.verify-radio .vr svg{width:14px;height:14px}
+</style>
+</head>
+<body style="background:#F4F6FB;padding-bottom:90px">
+
+<header class="app-bar" style="padding-bottom:14px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="hazard-list.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">整改验收</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">历史</a>
+    </div>
+  </div>
+  <div class="top-tabs">
+    <span class="t-item active">验收表单</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">反馈材料</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">流程</span>
+  </div>
+</header>
+
+<!-- 关联隐患 -->
+<div class="card">
+  <div class="card-pad" style="padding:14px 16px">
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">关联隐患</div>
+    <div style="font-size:15px;font-weight:600;color:var(--text-title);line-height:1.5">充填实验室最西头的临建房墙体严重裂开</div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <span class="tag tag-blue">安全管理</span>
+      <span class="tag tag-warning">主体结构</span>
+      <span class="tag tag-error">高风险</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed #eef1f5;font-size:12px;color:var(--text-muted)">
+      <span>CKY-YHZG-2026-04-08</span>
+      <span>反馈时间：2026-05-26</span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改责任人提交的反馈 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>整改责任人提交的反馈</div>
+  <div class="form-row"><div class="label">反馈人员</div><div class="value">熊维 · 资环事业部</div></div>
+  <div class="form-row"><div class="label">反馈日期</div><div class="value">2026-05-26 14:20</div></div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">整改内容</div>
+    <div class="value" style="color:var(--text-regular);line-height:1.7;text-align:left">已对充填实验室最西头临建房进行拆除处理：5/13 已停止使用并划设警示带；5/16 委托湖南建科评估，5/22 出具《临建房安全鉴定报告》（C 级危房）；5/24 由具备资质的湖南拆建工程有限公司完成拆除，废料 4.2t 已分类清运；5/25 现场清理完毕。</div>
+  </div>
+</div>
+
+<!-- 整改前后对比 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>整改前后对比照片</div>
+  <div class="compare">
+    <div>
+      <div class="col-h"><span class="dot-c"></span>整改前</div>
+      <div class="upload-grid">
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#c8d3eb)">墙体裂开</div></div>
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#f29100,#ffc266);color:#fff">外凸<br>近景</div></div>
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#c8d3eb)">屋顶裂缝</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="col-h after"><span class="dot-c"></span>整改后</div>
+      <div class="upload-grid">
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">已拆除<br>全景</div></div>
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">地面<br>恢复</div></div>
+        <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F);color:#fff">废料<br>清运</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 16px 14px">
+    <div class="list-item" style="border-bottom:none;background:#f4f6fb;border-radius:10px;padding:10px 12px">
+      <div class="li-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="li-info">
+        <div class="li-title" style="font-size:13px">资环事业部充填实验室整改报告.pdf</div>
+        <div class="li-desc">2.4 MB · 整改责任人提交</div>
+      </div>
+      <span class="li-arrow">›</span>
+    </div>
+  </div>
+</div>
+
+<!-- 现场验收 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>现场验收
+    <span class="title-badge danger" style="margin-left:auto">需安环部填写</span>
+  </div>
+  <div class="form-row col">
+    <div class="label req">验收结果</div>
+    <div class="verify-radio">
+      <span class="vr active pass">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        合格
+      </span>
+      <span class="vr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        需补充材料
+      </span>
+      <span class="vr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        不合格
+      </span>
+    </div>
+  </div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label req">验收意见</div>
+    <textarea class="form-textarea" placeholder="请填写现场验收意见…">现场已对照《临建房安全鉴定报告》核实拆除情况，废料分类清运手续完整，现场恢复整洁，整改到位，同意闭环。</textarea>
+    <div class="media-toolbar">
+      <span class="mt-btn voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>语音输入</span>
+    </div>
+  </div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">现场复核照片</div>
+  </div>
+  <div class="upload-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#7B5BD6,#A185E8);color:#fff">复核<br>1</div><span class="del">×</span></div>
+    <div class="upload-cell add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>拍照</span>
+    </div>
+  </div>
+</div>
+
+<div style="height:16px"></div>
+
+<!-- 底部操作栏：验收通过 / 退回 -->
+<div class="action-bar">
+  <span class="more-btn">···</span>
+  <button class="btn btn-primary" style="flex:1.5">验收通过 · 关闭隐患</button>
+  <button class="btn btn-danger" style="flex:1.2">退回责任人</button>
+</div>
+
+</body>
+</html>

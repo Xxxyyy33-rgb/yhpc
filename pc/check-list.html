@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>安全环保检查记录 · 安全隐患排查系统</title>
+<link rel="stylesheet" href="p-style.css" />
+<style>
+/* 风险单元徽标（与 risk-unit.html 保持一致） */
+.lvl{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;line-height:18px}
+.lvl::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
+.lvl-A{background:#fce8ea;color:#DF2027}.lvl-A::before{background:#DF2027}
+.lvl-B{background:#fff5e5;color:#F29100}.lvl-B::before{background:#F29100}
+.lvl-C{background:#fdf6dd;color:#A37700}.lvl-C::before{background:#E6BB00}
+.lvl-D{background:#e6f7ff;color:#0BAFD2}.lvl-D::before{background:#0BAFD2}
+
+/* 风险单元 chip 在表格内的小型展示 */
+.ru-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ru-cell .ru-line{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-regular);min-width:0}
+.ru-cell .ru-line .ru-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ru-cell .ru-more{font-size:11px;color:var(--text-muted)}
+
+/* 检查范围多行 */
+.scope-cell{font-size:12px;color:var(--text-regular);line-height:1.55}
+.scope-cell .sc-line{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scope-cell .sc-sub{color:var(--text-muted);font-size:11px}
+</style>
+</head>
+<body>
+
+<aside class="side-nav">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="lg-text">长沙矿山院<div class="lg-sub">安全隐患排查系统</div></div>
+  </div>
+  <nav>
+    <div class="nav-group">数据分析</div>
+    <a href="statistics.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
+      统计分析
+    </a>
+    <div class="nav-group">检查管理</div>
+    <a class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      检查记录
+    </a>
+    <div class="nav-group">隐患管理</div>
+    <a href="hazard-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      隐患台账
+    </a>
+    <div class="nav-group">基础数据</div>
+    <a href="risk-unit.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      风险单元
+    </a>
+  </nav>
+  <div class="footer">
+    <span class="avatar">吴</span>
+    <div class="me-info">
+      <div class="me-name">吴敏</div>
+      <div class="me-dept">安环部 · 管理员</div>
+    </div>
+    <span class="logout" title="退出">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+    </span>
+  </div>
+</aside>
+
+<div class="breadcrumb">
+  <a href="../index.html">原型导航</a><span class="sep">/</span>
+  检查管理<span class="sep">/</span>
+  安全环保检查记录
+</div>
+
+<div class="page-header">
+  <div>
+    <h2>安全环保检查记录 <span class="ph-sub">2026 年度全部安全环保检查台账</span></h2>
+    <div class="subtitle">共 186 条记录 · 编号规则：CKY-AQJC-2026-XX-XX</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="form-group"><label>检查日期</label>
+    <input value="2026-01-01" /> 至 <input value="2026-05-26" />
+  </div>
+  <div class="form-group"><label>检查类型</label>
+    <select><option>全部</option><option>综合检查</option><option>专项检查</option><option>月度</option><option>季度</option><option>节前</option><option>作业前</option></select>
+  </div>
+  <div class="form-group"><label>受检事业部</label>
+    <select><option>全部</option><option>资环事业部</option><option>选矿事业部</option><option>深部开采所</option><option>新材料所</option></select>
+  </div>
+  <div class="form-group"><label>检查范围</label>
+    <select>
+      <option>全部</option>
+      <option>院本部</option>
+      <option>实验室区域</option>
+      <option>中试车间</option>
+      <option>项目现场</option>
+      <option>办公区</option>
+      <option>仓储区</option>
+      <option>后湖实验基地</option>
+    </select>
+  </div>
+  <div class="form-group"><label>风险单元</label>
+    <select>
+      <option>全部</option>
+      <option>采矿楼 · 配电间</option>
+      <option>采矿楼 · 电梯间</option>
+      <option>采矿楼 · 消防泵房</option>
+      <option>院内道路 · 停车场</option>
+      <option>磨矿实验室</option>
+      <option>浮选实验室</option>
+      <option>化学品库</option>
+      <option>智能矿山总装车间</option>
+    </select>
+  </div>
+  <div class="form-group"><label>关键词</label>
+    <input placeholder="编号 / 名称 / 检查人" style="width:200px" />
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm">查询</button>
+    <button class="btn btn-outline btn-sm">重置</button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <div class="table-toolbar">
+    <div class="info">已选 <b>0</b> 条 · 共 <b>186</b> 条记录</div>
+    <div class="actions">
+      <button class="btn btn-default btn-xs">批量打印</button>
+      <button class="btn btn-default btn-xs">导出 PDF</button>
+      <button class="btn btn-outline btn-xs">导出 Excel</button>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:38px"><input type="checkbox" /></th>
+        <th style="width:154px">检查编号</th>
+        <th>检查名称 / 受检单位</th>
+        <th style="width:90px">检查类型</th>
+        <th style="width:170px">检查范围</th>
+        <th style="width:200px">检查风险单元</th>
+        <th style="width:96px">检查日期</th>
+        <th style="width:110px">检查负责人</th>
+        <th style="width:78px;text-align:center">隐患数</th>
+        <th style="width:120px;text-align:center">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-22</td>
+        <td>
+          <a class="link" href="check-detail.html">资环试验室综合安全环保检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">资环事业部 · 充填实验室</div>
+        </td>
+        <td><span class="tag tag-blue">综合检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">院本部 · 资环试验室</span>
+          <span class="sc-sub sc-line">充填实验室西区 / 化学品库</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">磨矿实验室 1</span></div>
+            <div class="ru-line"><span class="lvl lvl-C">C</span><span class="ru-name">浮选实验室 1</span></div>
+            <span class="ru-more">共 4 个 · A 0 / B 1 / C 3</span>
+          </div>
+        </td>
+        <td>2026-05-22</td>
+        <td>龚明 <span class="text-muted">+3</span></td>
+        <td class="text-num"><span class="rate warn">3</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-20</td>
+        <td>
+          <a class="link" href="check-detail.html">中试车间消防安全专项检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">选矿事业部 · 中试车间</div>
+        </td>
+        <td><span class="tag tag-warning">专项检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">中试车间 · 一至三层</span>
+          <span class="sc-sub sc-line">消防通道 / 灭火器 / 应急照明</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-A">A</span><span class="ru-name">智能矿山总装车间</span></div>
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">中试车间 · 配电室</span></div>
+            <span class="ru-more">共 3 个 · A 1 / B 2</span>
+          </div>
+        </td>
+        <td>2026-05-20</td>
+        <td>张磊 <span class="text-muted">+1</span></td>
+        <td class="text-num"><span class="rate bad">5</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-18</td>
+        <td>
+          <a class="link" href="check-detail.html">5 月份月度环保巡检</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">全院（环保维度）</div>
+        </td>
+        <td><span class="tag tag-success">月度检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">全院 · 环保维度</span>
+          <span class="sc-sub sc-line">废水 / 废气 / 危废 / 噪声</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">浮选实验室 1</span></div>
+            <div class="ru-line"><span class="lvl lvl-C">C</span><span class="ru-name">危废暂存间</span></div>
+            <span class="ru-more">共 8 个 · A 0 / B 3 / C 5</span>
+          </div>
+        </td>
+        <td>2026-05-18</td>
+        <td>赵敏 <span class="text-muted">+2</span></td>
+        <td class="text-num"><span class="text-muted">0</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-15</td>
+        <td>
+          <a class="link" href="check-detail.html">化学品库房危险作业前安全检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">资环事业部 · 化学品库</div>
+        </td>
+        <td><span class="tag tag-purple">作业前检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">资环事业部 · 化学品库</span>
+          <span class="sc-sub sc-line">乙醇贮存柜 / 通风设施</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-A">A</span><span class="ru-name">化学品库（甲类）</span></div>
+            <span class="ru-more">共 1 个 · A 1</span>
+          </div>
+        </td>
+        <td>2026-05-15</td>
+        <td>熊维</td>
+        <td class="text-num"><span class="rate good">1</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-12</td>
+        <td>
+          <a class="link" href="check-detail.html">资环试验室综合安全检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">资环事业部 · 充填实验室</div>
+        </td>
+        <td><span class="tag tag-blue">综合检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">充填实验室全区</span>
+          <span class="sc-sub sc-line">激发剂车间 / 配电间</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">充填 · 激发剂模拟</span></div>
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">采矿楼 · 配电间</span></div>
+            <span class="ru-more">共 5 个 · A 0 / B 3 / C 2</span>
+          </div>
+        </td>
+        <td>2026-05-12</td>
+        <td>龚明 <span class="text-muted">+3</span></td>
+        <td class="text-num"><span class="rate warn">3</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-10</td>
+        <td>
+          <a class="link" href="check-detail.html">深部开采所季度安全大检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">深部开采研究所 · 共 4 个项目部</div>
+        </td>
+        <td><span class="tag tag-blue">季度检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">深部开采所 · 项目现场</span>
+          <span class="sc-sub sc-line">+120 m / +60 m / 通风井</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-A">A</span><span class="ru-name">+120 m 水平掘进面</span></div>
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">主通风系统</span></div>
+            <span class="ru-more">共 6 个 · A 1 / B 3 / C 2</span>
+          </div>
+        </td>
+        <td>2026-05-10</td>
+        <td>李建辉 <span class="text-muted">+3</span></td>
+        <td class="text-num"><span class="rate good">7</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-05-08</td>
+        <td>
+          <a class="link" href="check-detail.html">新材料楼危废暂存间检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">新材料研究所 · 危废暂存间</div>
+        </td>
+        <td><span class="tag tag-warning">专项检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">新材料楼 · 危废暂存间</span>
+          <span class="sc-sub sc-line">贮存周期 / 转运记录</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">危废暂存间</span></div>
+            <span class="ru-more">共 1 个 · B 1</span>
+          </div>
+        </td>
+        <td>2026-05-08</td>
+        <td>赵敏</td>
+        <td class="text-num"><span class="rate good">1</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-04-28</td>
+        <td>
+          <a class="link" href="check-detail.html">新材料中试基地节前安全检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">新材料研究所 · 中试基地</div>
+        </td>
+        <td><span class="tag tag-warning">节前检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">新材料中试基地</span>
+          <span class="sc-sub sc-line">用电 / 用气 / 防火 / 值守</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">中试基地 · 配气房</span></div>
+            <div class="ru-line"><span class="lvl lvl-C">C</span><span class="ru-name">中试基地 · 办公区</span></div>
+            <span class="ru-more">共 4 个 · A 0 / B 1 / C 3</span>
+          </div>
+        </td>
+        <td>2026-04-28</td>
+        <td>吴敏 <span class="text-muted">+1</span></td>
+        <td class="text-num"><span class="rate good">2</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-04-25</td>
+        <td>
+          <a class="link" href="check-detail.html">环保工程所污水处理实验室检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">环保工程研究所 · 污水实验室</div>
+        </td>
+        <td><span class="tag tag-warning">专项检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">环保工程所 · 污水实验室</span>
+          <span class="sc-sub sc-line">药品柜 / 排水 / 应急喷淋</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-C">C</span><span class="ru-name">污水实验室</span></div>
+            <span class="ru-more">共 1 个 · C 1</span>
+          </div>
+        </td>
+        <td>2026-04-25</td>
+        <td>赵敏</td>
+        <td class="text-num"><span class="text-muted">0</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" /></td>
+        <td class="text-mono">CKY-AQJC-2026-04-22</td>
+        <td>
+          <a class="link" href="check-detail.html">矿山装备所中试车间月度检查</a>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">矿山装备研究所 · 中试车间</div>
+        </td>
+        <td><span class="tag tag-success">月度检查</span></td>
+        <td class="scope-cell">
+          <span class="sc-line">矿山装备所 · 中试车间</span>
+          <span class="sc-sub sc-line">行车 / 焊机 / 起重作业</span>
+        </td>
+        <td>
+          <div class="ru-cell">
+            <div class="ru-line"><span class="lvl lvl-A">A</span><span class="ru-name">智能矿山总装车间</span></div>
+            <div class="ru-line"><span class="lvl lvl-B">B</span><span class="ru-name">总装车间 · 焊接区</span></div>
+            <span class="ru-more">共 2 个 · A 1 / B 1</span>
+          </div>
+        </td>
+        <td>2026-04-22</td>
+        <td>陈强</td>
+        <td class="text-num"><span class="rate good">2</span></td>
+        <td class="text-center actions-cell">
+          <a href="check-detail.html" class="btn-text">详情</a>
+          <a class="btn-text">导出</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="pagination">
+    <div class="info">显示第 <b>1-10</b> 条 · 共 <b>186</b> 条</div>
+    <div class="pages">
+      <button>‹</button>
+      <button class="active">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>4</button>
+      <button>...</button>
+      <button>19</button>
+      <button>›</button>
+      <select><option>10 条 / 页</option><option>20 条 / 页</option><option>50 条 / 页</option></select>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

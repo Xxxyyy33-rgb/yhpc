@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>隐患台账 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+/* ====== 隐患台账页 · 列表样式 ====== */
+body{padding-bottom:30px}
+
+/* 头部 Tab（融入蓝渐变） */
+.app-bar .stat-tabs{
+  position:relative;display:flex;gap:0;margin-top:14px;
+  background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
+  border-radius:14px;padding:4px;border:1px solid rgba(255,255,255,.2);
+}
+.app-bar .stat-tabs .st-tab{
+  flex:1;text-align:center;padding:8px 0;border-radius:10px;
+  color:rgba(255,255,255,.85);font-size:12.5px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;
+}
+.app-bar .stat-tabs .st-tab .st-num{font-size:17px;font-weight:700;color:#fff}
+.app-bar .stat-tabs .st-tab.active{background:#fff;color:var(--primary);font-weight:600}
+.app-bar .stat-tabs .st-tab.active .st-num{color:var(--primary)}
+.app-bar .stat-tabs .st-tab.active.warn{color:var(--warning)}
+.app-bar .stat-tabs .st-tab.active.warn .st-num{color:var(--warning)}
+.app-bar .stat-tabs .st-tab.active.purple{color:var(--purple)}
+.app-bar .stat-tabs .st-tab.active.purple .st-num{color:var(--purple)}
+.app-bar .stat-tabs .st-tab.active.success{color:var(--success)}
+.app-bar .stat-tabs .st-tab.active.success .st-num{color:var(--success)}
+
+/* 列表筛选条 */
+.list-filter{
+  display:flex;align-items:center;gap:8px;background:#fff;
+  padding:10px 14px;border-bottom:1px solid #f1f3f6;overflow-x:auto;scrollbar-width:none;
+}
+.list-filter::-webkit-scrollbar{display:none}
+.list-filter .lf-chip{
+  flex-shrink:0;display:inline-flex;align-items:center;gap:3px;padding:6px 11px;
+  border-radius:14px;background:#f4f6fb;color:var(--text-regular);font-size:12px;
+  border:1px solid transparent;
+}
+.list-filter .lf-chip svg{width:11px;height:11px;color:var(--text-muted)}
+.list-filter .lf-chip.active{background:var(--primary-bg);color:var(--primary);border-color:#dde6f7;font-weight:500}
+.list-filter .lf-chip.active svg{color:var(--primary)}
+.list-filter .lf-chip.danger{background:#FEF2F3;color:var(--error)}
+
+.list-stat{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 6px;font-size:12px;color:var(--text-muted);
+}
+.list-stat b{color:var(--primary);font-weight:600}
+.list-stat .ls-sort{color:var(--text-regular);display:inline-flex;align-items:center;gap:3px}
+.list-stat .ls-sort svg{width:12px;height:12px}
+
+/* === 隐患卡 === */
+.hz-card{
+  display:block;position:relative;background:#fff;border-radius:14px;margin:10px 14px 0;
+  padding:14px 16px 14px 18px;border:1px solid #eef1f5;
+  box-shadow:0 1px 2px rgba(38,86,187,.04);overflow:hidden;
+}
+.hz-card:active{background:#fafbfd}
+
+/* 左侧色条 */
+.hz-card.bar-error::before{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--error);
+}
+.hz-card.bar-warn::before{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--warning);
+}
+.hz-card.bar-purple::before{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--purple);
+}
+.hz-card.bar-success::before{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--success);
+}
+
+/* 顶部：编号 + 状态 */
+.hz-card .hz-top{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}
+.hz-card .hz-no{
+  flex:1;min-width:0;
+  font-family:Menlo,Consolas,monospace;font-size:11px;color:var(--text-muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hz-card .hz-status{
+  flex-shrink:0;font-size:11px;font-weight:500;padding:3px 10px;border-radius:11px;
+}
+.hz-card .hz-status.s-pending{background:var(--error-light);color:var(--error)}
+.hz-card .hz-status.s-running{background:var(--warning-light);color:var(--warning)}
+.hz-card .hz-status.s-verify{background:var(--purple-light);color:var(--purple)}
+.hz-card .hz-status.s-done{background:var(--success-light);color:var(--success)}
+.hz-card .hz-status.s-overdue{background:var(--error);color:#fff;font-weight:600}
+
+/* 标题 */
+.hz-card .hz-title{
+  font-size:14.5px;font-weight:600;color:var(--text-title);line-height:1.5;margin-bottom:8px;
+}
+
+/* 分类标签行 */
+.hz-card .hz-cat{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;
+}
+.hz-card .hz-cat .cat-tag{
+  font-size:11px;padding:1px 8px;border-radius:8px;line-height:18px;font-weight:500;
+}
+.hz-card .hz-cat .cat-tag.blue{background:var(--primary-bg);color:var(--primary)}
+.hz-card .hz-cat .cat-tag.warn{background:var(--warning-light);color:var(--warning)}
+
+/* 信息行 */
+.hz-card .hz-row{
+  display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.5;
+  color:var(--text-regular);padding:3px 0;
+}
+.hz-card .hz-row .hz-lbl{
+  flex-shrink:0;width:60px;color:var(--text-muted);
+}
+.hz-card .hz-row .hz-val{flex:1;min-width:0;color:var(--text-title);font-weight:500}
+.hz-card .hz-row .hz-val.urgent{color:var(--error);font-weight:600}
+.hz-card .hz-row .hz-val.success{color:var(--success);font-weight:600}
+
+/* 底部 */
+.hz-card .hz-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding-top:10px;border-top:1px dashed #eef1f5;
+  font-size:11.5px;color:var(--text-muted);
+}
+.hz-card .hz-foot .hz-meta{display:inline-flex;align-items:center;gap:4px}
+.hz-card .hz-foot .hz-meta svg{width:11px;height:11px}
+.hz-card .hz-foot .hz-go{
+  color:var(--primary);font-weight:600;font-size:12px;
+  display:inline-flex;align-items:center;gap:2px;
+}
+.hz-card .hz-foot .hz-go.danger{color:var(--error)}
+.hz-card .hz-foot .hz-go.success{color:var(--success)}
+.hz-card .hz-foot .hz-go svg{width:11px;height:11px}
+
+/* 加载更多 */
+.list-more{text-align:center;color:var(--text-muted);font-size:12px;padding:18px 0 24px}
+.list-more b{color:var(--primary);font-weight:500}
+
+/* 浮动登记按钮 */
+.fab-create{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-bottom));
+  z-index:50;width:calc(100% - 28px);max-width:402px;height:48px;border-radius:24px;
+  background:linear-gradient(135deg,#F29100,#FFB347);color:#fff;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:15px;font-weight:600;
+  box-shadow:0 8px 22px rgba(242,145,0,.32);
+}
+.fab-create svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+
+<header class="app-bar" style="padding-bottom:16px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="home.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">隐患台账</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- 状态 Tab（替代上方 stat 卡 + tabs） -->
+  <div class="stat-tabs">
+    <div class="st-tab active">
+      <span class="st-num">23</span>
+      <span>全部</span>
+    </div>
+    <div class="st-tab warn">
+      <span class="st-num">8</span>
+      <span>整改中</span>
+    </div>
+    <div class="st-tab purple">
+      <span class="st-num">2</span>
+      <span>待验收</span>
+    </div>
+    <div class="st-tab success">
+      <span class="st-num">13</span>
+      <span>已完结</span>
+    </div>
+  </div>
+</header>
+
+<!-- 筛选条 -->
+<div class="list-filter">
+  <span class="lf-chip active">全部类别
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip">本部门
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip">2026 年
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip danger">仅看超期</span>
+</div>
+
+<div class="list-stat">
+  <span>共 <b>23</b> 条隐患 · 当前 <b>6</b> 条</span>
+  <span class="ls-sort">按期限升序
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+</div>
+
+<!-- 隐患列表 -->
+<a href="hazard-detail.html" class="hz-card bar-error">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-08</span>
+    <span class="hz-status s-pending">待整改</span>
+  </div>
+  <div class="hz-title">充填实验室最西头的临建房墙体已经严重裂开，随时有倒塌的风险</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">安全管理</span>
+    <span class="cat-tag warn">主体结构</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">资环试验室 · 充填实验室西区</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">熊维 · 资环事业部</span></div>
+  <div class="hz-row"><span class="hz-lbl">整改期限</span><span class="hz-val urgent">2026-05-30 · 剩 3 天</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 龚明 · 05-12
+    </span>
+    <span class="hz-go danger">立即处置
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="hazard-detail.html" class="hz-card bar-warn">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-09</span>
+    <span class="hz-status s-running">整改中</span>
+  </div>
+  <div class="hz-title">中试车间二楼电缆桥架接地线脱落，存在用电安全隐患</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">用电安全</span>
+    <span class="cat-tag warn">设备设施</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">选矿中试车间 · 二楼东侧</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">刘智强 · 选矿事业部</span></div>
+  <div class="hz-row"><span class="hz-lbl">整改期限</span><span class="hz-val">2026-06-05 · 剩 9 天</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 张磊 · 05-18
+    </span>
+    <span class="hz-go">提交反馈
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="hazard-detail.html" class="hz-card bar-purple">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-10</span>
+    <span class="hz-status s-verify">待验收</span>
+  </div>
+  <div class="hz-title">化学品库房通风设施故障，库内有刺激性气味</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">职业健康安全</span>
+    <span class="cat-tag warn">化学品</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">资环事业部 · 化学品库</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">熊维（已反馈）</span></div>
+  <div class="hz-row"><span class="hz-lbl">反馈时间</span><span class="hz-val success">2026-05-26 · 按期反馈</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 吴敏 · 05-15
+    </span>
+    <span class="hz-go">查看反馈
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="hazard-detail.html" class="hz-card bar-error">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-07</span>
+    <span class="hz-status s-overdue">已超期</span>
+  </div>
+  <div class="hz-title">深部开采所中试井 +120 m 水平掘进面通风短路</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">职业健康安全</span>
+    <span class="cat-tag warn">应急管理</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">深部开采所 · +120 m 水平</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">陈强 · 深部开采所</span></div>
+  <div class="hz-row"><span class="hz-lbl">整改期限</span><span class="hz-val urgent">2026-05-20 · 已超 6 天</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 李建辉 · 05-08
+    </span>
+    <span class="hz-go danger">紧急处理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="hazard-detail.html" class="hz-card bar-success">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-06</span>
+    <span class="hz-status s-done">已完结</span>
+  </div>
+  <div class="hz-title">中试车间消防器材过期，灭火器压力不足</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">消防安全</span>
+    <span class="cat-tag warn">设备设施</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">选矿中试车间 · 一楼通道</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">张磊（验收通过）</span></div>
+  <div class="hz-row"><span class="hz-lbl">完结时间</span><span class="hz-val success">2026-05-22 · 用时 4 天</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 吴敏 · 05-18
+    </span>
+    <span class="hz-go success">查看记录
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="hazard-detail.html" class="hz-card bar-success">
+  <div class="hz-top">
+    <span class="hz-no">CKY-YHZG-2026-04-05</span>
+    <span class="hz-status s-done">已完结</span>
+  </div>
+  <div class="hz-title">新材料楼实验室危险废物贮存超期未转运</div>
+  <div class="hz-cat">
+    <span class="cat-tag blue">环境保护</span>
+    <span class="cat-tag warn">危险废物</span>
+  </div>
+  <div class="hz-row"><span class="hz-lbl">区域</span><span class="hz-val">新材料研究所 · 危废暂存间</span></div>
+  <div class="hz-row"><span class="hz-lbl">责任人</span><span class="hz-val">黄学斌（验收通过）</span></div>
+  <div class="hz-row"><span class="hz-lbl">完结时间</span><span class="hz-val success">2026-05-15 · 用时 7 天</span></div>
+  <div class="hz-foot">
+    <span class="hz-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><circle cx="12" cy="12" r="3"/></svg>
+      登记 赵敏 · 05-08
+    </span>
+    <span class="hz-go success">查看记录
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<div class="list-more">— 已加载 6 / 23 条 · <b>点击加载更多 ›</b> —</div>
+
+<!-- 浮动登记按钮 -->
+<a href="hazard-create.html" class="fab-create">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  登记新隐患
+</a>
+
+</body>
+</html>

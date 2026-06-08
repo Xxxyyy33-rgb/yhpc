@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>隐患详情 · 安全隐患排查系统</title>
+<link rel="stylesheet" href="p-style.css" />
+<style>
+/* ============ 隐患详情页 · 局部样式 ============ */
+
+/* 顶部 Hero */
+.detail-hero{
+  background:linear-gradient(135deg,#fff 0%,#fff5f6 100%);
+  border:1px solid var(--border-light);border-radius:10px;padding:18px 22px;margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:18px;border-left:3px solid var(--error);
+}
+.detail-hero .dh-icon{
+  width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#DF2027,#F45C61);color:#fff;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.detail-hero .dh-icon svg{width:24px;height:24px}
+.detail-hero .dh-main{flex:1;min-width:0}
+.detail-hero .dh-no{
+  font-family:Menlo,Consolas,monospace;font-size:12px;color:var(--text-muted);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.detail-hero .dh-no .copy-btn{
+  background:#fff;border:1px solid var(--border-light);border-radius:4px;padding:0 6px;
+  font-size:11px;color:var(--text-regular);cursor:pointer;height:18px;
+}
+.detail-hero .dh-title{font-size:18px;font-weight:700;color:var(--text-title);margin:6px 0 10px;line-height:1.5}
+.detail-hero .dh-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.detail-hero .dh-meta{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13px;color:var(--text-regular)}
+.detail-hero .dh-meta .dh-cell{display:inline-flex;align-items:center;gap:6px}
+.detail-hero .dh-meta .dh-cell svg{width:14px;height:14px;color:var(--text-muted)}
+.detail-hero .dh-meta .dh-cell .dh-lbl{color:var(--text-muted)}
+.detail-hero .dh-status{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+}
+.detail-hero .dh-status .dh-tag{
+  font-size:12px;font-weight:600;padding:4px 12px;border-radius:14px;
+  background:var(--warning-light);color:var(--warning);
+}
+.detail-hero .dh-status .dh-tag.success{background:var(--success-light);color:var(--success)}
+.detail-hero .dh-status .dh-tag.error{background:var(--error);color:#fff}
+.detail-hero .dh-status .dh-actions{display:flex;gap:6px}
+
+/* 倒计时提示 */
+.dh-countdown{
+  background:#fef9f0;border:1px solid #ffe4bb;border-radius:8px;padding:10px 14px;
+  font-size:13px;color:var(--text-title);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  border-left:3px solid var(--warning);
+}
+.dh-countdown svg{width:18px;height:18px;color:var(--warning);flex-shrink:0}
+.dh-countdown b{color:var(--error);font-weight:700;margin:0 4px}
+
+/* 描述列表（详情页） */
+.detail-card .desc-list .val.full{grid-column:span 3}
+
+/* 隐患描述大段 */
+.hz-content{
+  background:#fafbfd;border:1px solid var(--border-light);border-radius:8px;padding:14px 16px;
+  font-size:13px;color:var(--text-title);line-height:1.8;white-space:pre-wrap;
+}
+.hz-requirement{
+  background:#fff5e5;border:1px solid #ffe4bb;border-radius:8px;padding:14px 16px;
+  font-size:13px;color:var(--text-title);line-height:1.8;white-space:pre-wrap;
+  border-left:3px solid var(--warning);
+}
+
+/* 现场照片网格 */
+.photo-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px}
+.photo-cell{
+  position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;
+  background:#f4f6fb;
+}
+.photo-cell .preview{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:600;background:linear-gradient(135deg,#7B96D8,#5680DD);
+  text-align:center;line-height:1.4;
+}
+.photo-cell.video .video-tag{
+  position:absolute;left:6px;top:6px;font-size:10px;background:rgba(0,0,0,.65);color:#fff;
+  border-radius:3px;padding:1px 6px;display:inline-flex;align-items:center;gap:2px;
+}
+.photo-cell.video .video-tag svg{width:10px;height:10px}
+.photo-cell.video .play-icon{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:34px;height:34px;background:rgba(0,0,0,.55);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+
+/* 整改前后对比 */
+.compare-pc{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+.compare-pc .col-h{
+  font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;
+  color:var(--text-title);
+}
+.compare-pc .col-h::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--text-muted)}
+.compare-pc .col-h.before::before{background:var(--error)}
+.compare-pc .col-h.after::before{background:var(--success)}
+.compare-pc .photo-grid{grid-template-columns:repeat(3,1fr)}
+
+/* 反馈内容卡片 */
+.fb-block{
+  background:#f0faff;border:1px solid #bfe6f2;border-radius:8px;padding:14px 16px;
+  font-size:13px;color:var(--text-title);line-height:1.8;white-space:pre-wrap;
+  border-left:3px solid var(--primary);
+}
+.fb-meta{
+  display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--text-muted);
+  margin-bottom:10px;
+}
+.fb-meta .fb-cell{display:inline-flex;align-items:center;gap:4px}
+.fb-meta .fb-cell svg{width:13px;height:13px}
+
+/* 验收结果 */
+.vr-result{
+  display:flex;align-items:center;gap:10px;background:#e8fcf4;border:1px solid #a5e3c5;
+  border-radius:8px;padding:12px 16px;color:var(--success);font-weight:600;
+}
+.vr-result svg{width:20px;height:20px}
+.vr-result .vr-text{font-size:14px}
+.vr-result .vr-time{font-size:12px;font-weight:400;color:var(--text-muted);margin-left:auto}
+
+.vr-opinion{
+  margin-top:10px;background:#fafbfd;border:1px solid var(--border-light);border-radius:8px;
+  padding:12px 14px;font-size:13px;color:var(--text-title);line-height:1.7;
+}
+
+/* 整改进度时间轴（横向卡片版） */
+.progress-timeline{
+  position:relative;padding-left:26px;
+}
+.progress-timeline::before{
+  content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--border-light);
+}
+.pt-item{
+  position:relative;padding:10px 0 18px;
+}
+.pt-item:last-child{padding-bottom:0}
+.pt-item::before{
+  content:"";position:absolute;left:-22px;top:14px;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid var(--border-light);z-index:1;
+}
+.pt-item.done::before{background:var(--success);border-color:var(--success)}
+.pt-item.active::before{
+  background:var(--warning);border-color:var(--warning);
+  box-shadow:0 0 0 4px rgba(242,145,0,.18);
+}
+.pt-item .pt-card{
+  background:#fafbfd;border:1px solid var(--border-light);border-radius:8px;padding:12px 14px;
+}
+.pt-item.done .pt-card{background:#f1faf6;border-color:#cae9da}
+.pt-item.active .pt-card{background:#fff9ee;border-color:#ffe4bb}
+.pt-item .pt-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:6px;
+}
+.pt-item .pt-title{font-size:14px;font-weight:600;color:var(--text-title)}
+.pt-item .pt-time{font-size:12px;color:var(--text-muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.pt-item .pt-by{font-size:12px;color:var(--text-regular);margin-bottom:6px}
+.pt-item .pt-desc{font-size:13px;color:var(--text-regular);line-height:1.7}
+
+/* 关联检查记录 */
+.ck-link-card{
+  background:#fff;border:1px solid var(--border-light);border-radius:8px;padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+}
+.ck-link-card .cl-icon{
+  width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#2656BB,#5680DD);color:#fff;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ck-link-card .cl-icon svg{width:20px;height:20px}
+.ck-link-card .cl-body{flex:1;min-width:0}
+.ck-link-card .cl-no{font-family:Menlo,Consolas,monospace;font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.ck-link-card .cl-title{font-size:14px;font-weight:600;color:var(--text-title);margin-bottom:4px}
+.ck-link-card .cl-meta{font-size:12px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:4px 14px}
+
+/* 附件文件 */
+.file-list-pc{display:flex;flex-direction:column;gap:8px}
+.file-item-pc{
+  display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;
+  background:#fafbfd;border:1px solid var(--border-light);transition:.18s;
+}
+.file-item-pc:hover{border-color:var(--primary-light);background:#f0f4ff}
+.file-item-pc .fi-ic{
+  width:32px;height:32px;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.file-item-pc .fi-ic svg{width:16px;height:16px}
+.file-item-pc .fi-ic.blue{background:#eef2fb;color:var(--primary)}
+.file-item-pc .fi-ic.orange{background:#fff5e5;color:var(--warning)}
+.file-item-pc .fi-ic.green{background:#e8fcf4;color:var(--success)}
+.file-item-pc .fi-ic.red{background:#fff0f1;color:var(--error)}
+.file-item-pc .fi-info{flex:1;min-width:0}
+.file-item-pc .fi-name{font-size:13px;font-weight:500;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item-pc .fi-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.file-item-pc .fi-act{
+  flex-shrink:0;color:var(--primary);font-size:12px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:2px;
+}
+.file-item-pc .fi-act svg{width:13px;height:13px}
+
+/* 状态总览（侧栏） */
+.status-card{
+  background:#fff;border-radius:8px;border:1px solid var(--border-light);padding:18px;margin-bottom:14px;
+}
+.status-card h3{font-size:14px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px;color:var(--text-title)}
+.status-card h3::before{content:"";width:3px;height:14px;background:var(--primary);border-radius:2px}
+.status-card .sc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.status-card .sc-cell{
+  background:#fafbfd;border-radius:6px;padding:10px;text-align:center;
+}
+.status-card .sc-cell .sc-num{font-size:18px;font-weight:700;color:var(--primary);line-height:1.2}
+.status-card .sc-cell .sc-num.warn{color:var(--warning)}
+.status-card .sc-cell .sc-num.error{color:var(--error)}
+.status-card .sc-cell .sc-num.success{color:var(--success)}
+.status-card .sc-cell .sc-lbl{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* 操作记录时间轴（侧栏） */
+.log-timeline{position:relative;padding-left:20px}
+.log-timeline::before{
+  content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--border-light);
+}
+.log-item{position:relative;padding:8px 0 12px;font-size:12px}
+.log-item:last-child{padding-bottom:0}
+.log-item::before{
+  content:"";position:absolute;left:-17px;top:11px;width:10px;height:10px;border-radius:50%;
+  background:#fff;border:2px solid var(--primary);
+}
+.log-item.success::before{background:var(--success);border-color:var(--success)}
+.log-item.warning::before{background:var(--warning);border-color:var(--warning)}
+.log-item.error::before{background:var(--error);border-color:var(--error)}
+.log-item .log-act{font-weight:600;color:var(--text-title);font-size:13px}
+.log-item .log-meta{color:var(--text-muted);margin-top:2px}
+.log-item .log-by{color:var(--text-regular);margin-top:2px}
+
+/* 责任人区块 */
+.owner-block{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fafbfd;border-radius:8px;
+  border:1px solid var(--border-light);
+}
+.owner-block .av{
+  width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex-shrink:0;
+}
+.owner-block .ob-info{flex:1;min-width:0}
+.owner-block .ob-name{font-size:14px;font-weight:600;color:var(--text-title)}
+.owner-block .ob-dept{font-size:12px;color:var(--text-muted);margin-top:2px}
+.owner-block .ob-side{
+  text-align:right;font-size:12px;color:var(--text-muted);
+}
+.owner-block .ob-side .ob-deadline{font-size:14px;color:var(--error);font-weight:600;margin-top:2px}
+</style>
+</head>
+<body>
+
+<aside class="side-nav">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="lg-text">长沙矿山院<div class="lg-sub">安全隐患排查系统</div></div>
+  </div>
+  <nav>
+    <div class="nav-group">数据分析</div>
+    <a href="statistics.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
+      统计分析
+    </a>
+    <div class="nav-group">检查管理</div>
+    <a href="check-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      检查记录
+    </a>
+    <div class="nav-group">隐患管理</div>
+    <a class="active" href="hazard-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      隐患台账
+    </a>
+    <div class="nav-group">基础数据</div>
+    <a href="risk-unit.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      风险单元
+    </a>
+  </nav>
+  <div class="footer">
+    <span class="avatar">吴</span>
+    <div class="me-info">
+      <div class="me-name">吴敏</div>
+      <div class="me-dept">安环部 · 管理员</div>
+    </div>
+    <span class="logout" title="退出">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+    </span>
+  </div>
+</aside>
+
+<div class="breadcrumb">
+  <a href="../index.html">原型导航</a><span class="sep">/</span>
+  隐患管理<span class="sep">/</span>
+  <a href="hazard-list.html">隐患台账</a><span class="sep">/</span>
+  隐患详情
+</div>
+
+<!-- 顶部 Hero -->
+<div class="detail-hero">
+  <div class="dh-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+  </div>
+  <div class="dh-main">
+    <div class="dh-no">
+      隐患编号：CKY-YHZG-2026-04-08
+      <button class="copy-btn">复制</button>
+    </div>
+    <div class="dh-title">充填实验室最西头的临建房墙体已经严重裂开，随时有倒塌的风险</div>
+    <div class="dh-tags">
+      <span class="tag tag-blue">安全管理</span>
+      <span class="tag tag-warning">主体结构</span>
+      <span class="tag tag-error">高风险</span>
+    </div>
+    <div class="dh-meta">
+      <span class="dh-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span class="dh-lbl">检查日期：</span>2026-05-12
+      </span>
+      <span class="dh-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+        <span class="dh-lbl">受检单位：</span>资环事业部 · 充填实验室
+      </span>
+      <span class="dh-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="dh-lbl">所在区域：</span>充填实验室西区
+      </span>
+      <span class="dh-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="dh-lbl">登记人：</span>龚明
+      </span>
+    </div>
+  </div>
+  <div class="dh-status">
+    <span class="dh-tag error">待整改 · 倒计时 3 天</span>
+  </div>
+</div>
+
+<!-- 倒计时提示 -->
+<div class="dh-countdown">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+  距整改截止期限 <b>2026-05-30</b> 仅剩 <b>3 天</b> · 请整改责任人尽快提交反馈，逾期将自动转入已超期状态并触发督办流程。
+</div>
+
+<!-- 主体二列布局 -->
+<div class="detail-grid">
+
+  <!-- 左侧主体 -->
+  <div class="detail-main">
+
+    <!-- 隐患信息 -->
+    <div class="detail-card">
+      <h3>隐患信息</h3>
+      <dl class="desc-list">
+        <span class="lbl">检查日期</span><span class="val">2026-05-12</span>
+        <span class="lbl">受检单位</span><span class="val">资环事业部 · 充填实验室</span>
+        <span class="lbl">所在区域</span><span class="val">充填实验室西区</span>
+        <span class="lbl">隐患大类</span><span class="val"><span class="tag tag-blue">安全管理</span></span>
+        <span class="lbl">隐患类型</span><span class="val"><span class="tag tag-warning">主体结构</span></span>
+        <span class="lbl">风险等级</span><span class="val"><span class="tag tag-error">高风险</span></span>
+      </dl>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-muted);margin-bottom:6px">隐患描述</div>
+      <div class="hz-content">充填实验室最西头的临建房（约 28㎡，砖混结构，使用年限 12 年）墙体已经严重裂开，最大裂缝宽度 8 cm，墙面外凸明显，随时有倒塌的风险，下方为 380V 配电柜与员工通道，存在重大安全隐患。</div>
+
+      <div style="font-size:12px;color:var(--text-muted);margin-top:18px;display:flex;align-items:center;justify-content:space-between">
+        <span>隐患照片 / 视频（共 3 项）</span>
+        <a class="btn-text">查看大图</a>
+      </div>
+      <div class="photo-grid">
+        <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#7B96D8);color:#fff">墙体<br>裂缝近景</div></div>
+        <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#F29100,#FFB347)">外凸<br>侧视图</div></div>
+        <div class="photo-cell video">
+          <div class="preview" style="background:linear-gradient(135deg,#1a4299,#5680DD)">现场视频</div>
+          <span class="video-tag">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            00:12
+          </span>
+          <span class="play-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 整改要求 -->
+    <div class="detail-card">
+      <h3>
+        整改要求
+        <span class="tag tag-warning" style="font-weight:500">由检查人填写</span>
+      </h3>
+      <div class="hz-requirement">1. 立即停止使用该临建房，划设警示带与警示标志；
+2. 委托具备资质的第三方对房屋进行安全评估；
+3. 评估通过后于 2026-05-30 前完成拆除。</div>
+
+      <div style="margin-top:16px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">整改责任人 · 整改截止</div>
+        <div class="owner-block">
+          <span class="av">熊</span>
+          <div class="ob-info">
+            <div class="ob-name">熊维</div>
+            <div class="ob-dept">资环事业部 · 部门安全员</div>
+          </div>
+          <div class="ob-side">
+            整改截止
+            <div class="ob-deadline">2026-05-30（剩 3 天）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 整改反馈（已提交） -->
+    <div class="detail-card">
+      <h3>
+        整改反馈
+        <span class="tag tag-info" style="font-weight:500;background:#f0faff;color:var(--primary)">已提交反馈</span>
+      </h3>
+      <div class="fb-meta">
+        <span class="fb-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          反馈人员：熊维 · 资环事业部
+        </span>
+        <span class="fb-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          反馈时间：2026-05-26 14:20
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">整改内容</div>
+      <div class="fb-block">已对充填实验室最西头临建房进行拆除处理：
+1. 5/13 已停止使用，划设警示带；
+2. 5/16 委托湖南建科评估，5/22 出具《临建房安全鉴定报告》（C 级危房）；
+3. 5/24 由具备资质的湖南拆建工程有限公司完成拆除，废料 4.2t 已分类清运；
+4. 5/25 现场清理完毕，恢复地面整洁。</div>
+
+      <div style="margin-top:18px;font-size:12px;color:var(--text-muted);margin-bottom:8px">整改前后对比照片</div>
+      <div class="compare-pc">
+        <div>
+          <div class="col-h before">整改前</div>
+          <div class="photo-grid">
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#7B96D8);color:#fff">墙体<br>裂开</div></div>
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#F29100,#FFB347)">外凸<br>近景</div></div>
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#7B96D8);color:#fff">屋顶<br>裂缝</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="col-h after">整改后</div>
+          <div class="photo-grid">
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F)">已拆除<br>全景</div></div>
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F)">地面<br>恢复</div></div>
+            <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#1BB975,#43D78F)">废料<br>清运</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 整改验收 -->
+    <div class="detail-card">
+      <h3>
+        整改验收
+        <span class="tag tag-success" style="font-weight:500">已验收通过</span>
+      </h3>
+      <div class="vr-result">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <span class="vr-text">验收结果：合格 · 已闭环</span>
+        <span class="vr-time">2026-05-27 10:30 · 吴敏（安环部）</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin:14px 0 6px">验收意见</div>
+      <div class="vr-opinion">现场已对照《临建房安全鉴定报告》核实拆除情况，废料分类清运手续完整，现场恢复整洁，整改到位，同意闭环。</div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-muted);margin-bottom:8px">现场复核照片（共 1 张）</div>
+      <div class="photo-grid" style="grid-template-columns:repeat(6,1fr)">
+        <div class="photo-cell"><div class="preview" style="background:linear-gradient(135deg,#7B5BD6,#A185E8)">复核<br>1</div></div>
+      </div>
+    </div>
+
+    <!-- 整改进度时间轴 -->
+    <div class="detail-card">
+      <h3>
+        整改进度
+        <span class="tag tag-blue" style="font-weight:500">3 / 3 步</span>
+      </h3>
+      <div class="progress-timeline">
+
+        <div class="pt-item done">
+          <div class="pt-card">
+            <div class="pt-head">
+              <div class="pt-title">隐患登记</div>
+              <span class="tag tag-success" style="font-weight:500">已完成</span>
+              <span class="pt-time">2026-05-12 15:42</span>
+            </div>
+            <div class="pt-by">龚明（资环事业部 · 安全员）</div>
+            <div class="pt-desc">充填实验室综合检查中发现，已附 3 张照片 + 1 段视频。</div>
+          </div>
+        </div>
+
+        <div class="pt-item done">
+          <div class="pt-card">
+            <div class="pt-head">
+              <div class="pt-title">提交反馈</div>
+              <span class="tag tag-success" style="font-weight:500">已提交</span>
+              <span class="pt-time">2026-05-26 14:20</span>
+            </div>
+            <div class="pt-by">熊维 · 附整改报告 1 份、整改后照片 3 张、视频 1 段</div>
+            <div class="pt-desc">已上传《资环事业部充填实验室整改报告.pdf》并附整改前后对比照片。</div>
+          </div>
+        </div>
+
+        <div class="pt-item done">
+          <div class="pt-card">
+            <div class="pt-head">
+              <div class="pt-title">现场验收</div>
+              <span class="tag tag-success" style="font-weight:500">合格 · 闭环</span>
+              <span class="pt-time">2026-05-27 10:30</span>
+            </div>
+            <div class="pt-by">吴敏（安环部 · 管理员）</div>
+            <div class="pt-desc">现场已对照鉴定报告核实拆除情况，废料分类清运手续完整，现场恢复整洁，验收通过，隐患闭环。</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 右侧侧栏 -->
+  <div class="detail-side">
+
+    <!-- 状态总览 -->
+    <div class="status-card">
+      <h3>状态总览</h3>
+      <div class="sc-grid">
+        <div class="sc-cell">
+          <div class="sc-num error">3</div>
+          <div class="sc-lbl">距截止天数</div>
+        </div>
+        <div class="sc-cell">
+          <div class="sc-num">15</div>
+          <div class="sc-lbl">已用工期（天）</div>
+        </div>
+        <div class="sc-cell">
+          <div class="sc-num warn">7</div>
+          <div class="sc-lbl">现场照片</div>
+        </div>
+        <div class="sc-cell">
+          <div class="sc-num">2</div>
+          <div class="sc-lbl">附件文件</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-light);font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between">
+        <span>登记时间</span><span>2026-05-12 15:42</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:6px">
+        <span>验收时间</span><span>2026-05-27 10:30</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:6px">
+        <span>最后更新</span><span>2026-05-27 10:32</span>
+      </div>
+    </div>
+
+    <!-- 关联检查记录 -->
+    <div class="detail-card">
+      <h3>关联检查记录</h3>
+      <div class="ck-link-card">
+        <div class="cl-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="cl-body">
+          <div class="cl-no">CKY-AQJC-2026-05-12</div>
+          <div class="cl-title">充填实验室综合安全检查</div>
+          <div class="cl-meta">
+            <span>2026-05-12</span>
+            <span>专业安全检查</span>
+            <span>记录人：龚明</span>
+          </div>
+        </div>
+        <a class="btn-text" href="check-detail.html">查看</a>
+      </div>
+    </div>
+
+    <!-- 附件清单 -->
+    <div class="detail-card">
+      <h3>
+        附件文件
+        <span class="tag tag-blue" style="font-weight:500">2 个</span>
+      </h3>
+      <div class="file-list-pc">
+        <div class="file-item-pc">
+          <div class="fi-ic red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div class="fi-info">
+            <div class="fi-name">资环事业部充填实验室整改报告.pdf</div>
+            <div class="fi-meta">2.4 MB · 熊维 上传 · 2026-05-26</div>
+          </div>
+          <a class="fi-act">下载</a>
+        </div>
+        <div class="file-item-pc">
+          <div class="fi-ic orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h2"/></svg>
+          </div>
+          <div class="fi-info">
+            <div class="fi-name">临建房安全鉴定报告.pdf</div>
+            <div class="fi-meta">1.2 MB · 湖南建科 · 2026-05-22</div>
+          </div>
+          <a class="fi-act">下载</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

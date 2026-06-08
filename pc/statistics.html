@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>统计分析 · 安全隐患排查系统</title>
+<link rel="stylesheet" href="p-style.css" />
+<style>
+/* ========= 统计分析页 · 局部样式 ========= */
+
+/* 模块标题 */
+.sec-title{
+  display:flex;align-items:center;gap:10px;margin:22px 0 12px;
+  font-size:16px;font-weight:700;color:var(--text-title);
+}
+.sec-title::before{
+  content:"";width:4px;height:18px;background:linear-gradient(180deg,var(--primary),var(--primary-light));border-radius:2px;
+}
+.sec-title .sec-sub{font-size:12px;font-weight:400;color:var(--text-muted);margin-left:4px}
+.sec-title .sec-tag{
+  margin-left:auto;font-size:11px;font-weight:500;color:var(--text-regular);
+  background:#fafbfd;border:1px solid var(--border-light);padding:3px 10px;border-radius:11px;
+}
+
+/* 领导带班 · 角色聚合卡 */
+/* 个人执行明细表 · 增强样式 */
+.exec-table table{font-size:12px}
+.exec-table th{font-weight:600;background:#fafbfd;color:var(--text-regular)}
+.exec-row .role-tag{
+  display:inline-flex;align-items:center;font-size:11px;padding:1px 8px;border-radius:9px;font-weight:500;
+}
+.exec-row .role-tag.r-ceo{background:#fce8ea;color:var(--error)}
+.exec-row .role-tag.r-vp{background:#fff5e5;color:var(--warning)}
+.exec-row .role-tag.r-dept{background:#eef2fb;color:var(--primary)}
+.exec-row .role-tag.r-team{background:#e8fcf4;color:var(--success)}
+.exec-row .person{display:flex;align-items:center;gap:8px}
+.exec-row .person .av{
+  width:26px;height:26px;border-radius:50%;background:var(--primary-bg);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;
+}
+.s-tag{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 9px;border-radius:10px;font-weight:500;
+}
+.s-tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-tag.s-ok{background:var(--success-light);color:var(--success)}
+.s-tag.s-warn{background:var(--warning-light);color:var(--warning)}
+.s-tag.s-bad{background:var(--error-light);color:var(--error)}
+
+/* 隐患状态环形 · 集成 KPI */
+.hz-state-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.hz-state-cell{
+  background:#fff;border:1px solid var(--border-light);border-radius:8px;padding:14px 16px;
+  border-left:3px solid var(--text-muted);position:relative;
+}
+.hz-state-cell.s-pending{border-left-color:var(--error)}
+.hz-state-cell.s-running{border-left-color:var(--warning)}
+.hz-state-cell.s-verify{border-left-color:var(--purple)}
+.hz-state-cell.s-done{border-left-color:var(--success)}
+.hz-state-cell.s-overdue{border-left-color:#374151}
+.hz-state-cell .lbl{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.hz-state-cell .lbl .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.hz-state-cell.s-pending .lbl .dot{background:var(--error)}
+.hz-state-cell.s-running .lbl .dot{background:var(--warning)}
+.hz-state-cell.s-verify .lbl .dot{background:var(--purple)}
+.hz-state-cell.s-done .lbl .dot{background:var(--success)}
+.hz-state-cell.s-overdue .lbl .dot{background:#374151}
+.hz-state-cell .num{font-size:24px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.hz-state-cell.s-pending .num{color:var(--error)}
+.hz-state-cell.s-running .num{color:var(--warning)}
+.hz-state-cell.s-verify .num{color:var(--purple)}
+.hz-state-cell.s-done .num{color:var(--success)}
+.hz-state-cell.s-overdue .num{color:#374151}
+.hz-state-cell .pct{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* 风险单元等级 mini · A/B/C/D 组合 */
+.lv-mix-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.lv-mix-cell{
+  background:#fff;border:1px solid var(--border-light);border-radius:8px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.lv-mix-cell .lv-tag{
+  width:38px;height:38px;border-radius:9px;color:#fff;font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.lv-mix-cell.lv-A .lv-tag{background:linear-gradient(135deg,#DF2027,#F45C61)}
+.lv-mix-cell.lv-B .lv-tag{background:linear-gradient(135deg,#F29100,#FFB347)}
+.lv-mix-cell.lv-C .lv-tag{background:linear-gradient(135deg,#E6BB00,#F2D74E);color:#5C4500}
+.lv-mix-cell.lv-D .lv-tag{background:linear-gradient(135deg,#0BAFD2,#5BC9E6)}
+.lv-mix-cell .lv-info{flex:1;min-width:0}
+.lv-mix-cell .lv-line{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.lv-mix-cell .lv-num{font-size:20px;font-weight:700;color:var(--text-title);line-height:1}
+.lv-mix-cell .lv-name{font-size:12px;color:var(--text-muted)}
+.lv-mix-cell .lv-cov{height:5px;background:#f0f1f3;border-radius:3px;overflow:hidden}
+.lv-mix-cell .lv-cov-bar{height:100%;border-radius:3px}
+.lv-mix-cell.lv-A .lv-cov-bar{background:linear-gradient(90deg,#DF2027,#F45C61)}
+.lv-mix-cell.lv-B .lv-cov-bar{background:linear-gradient(90deg,#F29100,#FFB347)}
+.lv-mix-cell.lv-C .lv-cov-bar{background:linear-gradient(90deg,#E6BB00,#F2D74E)}
+.lv-mix-cell.lv-D .lv-cov-bar{background:linear-gradient(90deg,#0BAFD2,#5BC9E6)}
+.lv-mix-cell .lv-foot{font-size:11px;color:var(--text-muted);margin-top:4px;display:flex;justify-content:space-between}
+
+/* 漏检单元清单 · 紧凑表格 */
+.miss-table table{font-size:12px}
+.miss-table .miss-tag{
+  display:inline-flex;align-items:center;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;
+  background:#fce8ea;color:var(--error);
+}
+.miss-table .miss-tag.warn{background:#fff5e5;color:var(--warning)}
+
+/* 类型分布 mini bar */
+.cat-bar{display:flex;flex-direction:column;gap:8px}
+.cat-bar .cb-item{display:flex;align-items:center;gap:10px;font-size:12px}
+.cat-bar .cb-name{width:96px;color:var(--text-regular);flex-shrink:0;text-align:right}
+.cat-bar .cb-bg{flex:1;height:14px;background:#f0f1f3;border-radius:3px;overflow:hidden;position:relative}
+.cat-bar .cb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#2656BB,#5680DD)}
+.cat-bar .cb-fill.orange{background:linear-gradient(90deg,#F29100,#FFB347)}
+.cat-bar .cb-fill.red{background:linear-gradient(90deg,#DF2027,#F45C61)}
+.cat-bar .cb-fill.green{background:linear-gradient(90deg,#1BB975,#43D78F)}
+.cat-bar .cb-fill.purple{background:linear-gradient(90deg,#7B5BD6,#A185E8)}
+.cat-bar .cb-fill.cyan{background:linear-gradient(90deg,#0BAFD2,#5BC9E6)}
+.cat-bar .cb-num{min-width:48px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-title)}
+.cat-bar .cb-pct{min-width:40px;font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<aside class="side-nav">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="lg-text">长沙矿山院<div class="lg-sub">安全隐患排查系统</div></div>
+  </div>
+  <nav>
+    <div class="nav-group">数据分析</div>
+    <a class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
+      统计分析
+    </a>
+    <div class="nav-group">检查管理</div>
+    <a href="check-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      检查记录
+    </a>
+    <div class="nav-group">隐患管理</div>
+    <a href="hazard-list.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      隐患台账
+    </a>
+    <div class="nav-group">基础数据</div>
+    <a href="risk-unit.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      风险单元
+    </a>
+  </nav>
+  <div class="footer">
+    <span class="avatar">吴</span>
+    <div class="me-info">
+      <div class="me-name">吴敏</div>
+      <div class="me-dept">安环部 · 管理员</div>
+    </div>
+    <span class="logout" title="退出">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+    </span>
+  </div>
+</aside>
+
+<div class="breadcrumb">
+  <a href="../index.html">原型导航</a><span class="sep">/</span>
+  数据分析<span class="sep">/</span>
+  统计分析
+</div>
+
+<div class="page-header">
+  <div>
+    <h2>统计分析 <span class="ph-sub">安全检查 · 领导带班 · 隐患整改 · 风险单元 一站式洞察</span></h2>
+    <div class="subtitle">数据来源：安全检查台账 / 事故隐患整改清单 / 风险单元明细表 · 数据更新至 2026-05-26</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-default btn-sm">订阅周报</button>
+    <button class="btn btn-outline btn-sm">导出 PDF</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="form-group"><label>统计周期</label>
+    <select>
+      <option>2026 年度</option>
+      <option selected>近 6 个月</option>
+      <option>本季度</option>
+      <option>本月</option>
+    </select>
+  </div>
+  <div class="form-group"><label>事业部</label>
+    <select>
+      <option selected>全院汇总</option>
+      <option>院本部</option>
+      <option>资环事业部</option>
+      <option>检测中心</option>
+      <option>智能矿山事业部</option>
+      <option>充填事业部</option>
+      <option>物业运营部</option>
+    </select>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm">查询</button>
+    <button class="btn btn-outline btn-sm">重置</button>
+  </div>
+</div>
+
+<!-- ===== 顶部 KPI 总览 ===== -->
+<div class="kpi-row cols-5">
+  <div class="kpi-card blue">
+    <div class="label"><span class="icon">📋</span>累计检查</div>
+    <div class="value">186 <span class="unit">次</span></div>
+    <div class="sub">本月 28 次 <span class="trend up-good">+12.5%</span></div>
+  </div>
+  <div class="kpi-card orange">
+    <div class="label"><span class="icon">⚠</span>发现隐患</div>
+    <div class="value">142 <span class="unit">项</span></div>
+    <div class="sub">已闭环 119 项 · 闭环率 83.8%</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="label"><span class="icon">🛡️</span>风险单元</div>
+    <div class="value">60 <span class="unit">个</span></div>
+    <div class="sub">本月覆盖率 87% · 漏检 3 个</div>
+  </div>
+  <div class="kpi-card purple">
+    <div class="label"><span class="icon">👤</span>领导带班执行率</div>
+    <div class="value">92.5 <span class="unit">%</span></div>
+    <div class="sub">较上月 <span class="trend up-good">+3.4%</span></div>
+  </div>
+  <div class="kpi-card red">
+    <div class="label"><span class="icon">⏰</span>整改超期</div>
+    <div class="value">2 <span class="unit">项</span></div>
+    <div class="sub">已上报院办 · 重点督办</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ===== 安全环保检查统计 ===== -->
+<!-- ============================================================ -->
+<div class="sec-title">
+  <span>安全环保检查统计</span>
+  <span class="sec-sub">检查频次 · 类型分布 · 部门排名</span>
+  <span class="sec-tag">数据：安全检查台账</span>
+</div>
+
+<div class="charts-grid col-2-1">
+  <div class="chart-card">
+    <h3>月度检查频次趋势 <span class="pill">2026 年</span></h3>
+    <svg class="svg-chart" viewBox="0 0 600 240" preserveAspectRatio="none" style="height:220px">
+      <line class="grid" x1="40" y1="40" x2="590" y2="40"/>
+      <line class="grid" x1="40" y1="80" x2="590" y2="80"/>
+      <line class="grid" x1="40" y1="120" x2="590" y2="120"/>
+      <line class="grid" x1="40" y1="160" x2="590" y2="160"/>
+      <line class="axis" x1="40" y1="200" x2="590" y2="200"/>
+      <line class="axis" x1="40" y1="20" x2="40" y2="200"/>
+      <text x="0" y="44">40</text><text x="0" y="84">30</text><text x="0" y="124">20</text><text x="0" y="164">10</text><text x="0" y="204">0</text>
+      <text x="60" y="220">1月</text><text x="155" y="220">2月</text><text x="250" y="220">3月</text>
+      <text x="345" y="220">4月</text><text x="440" y="220">5月</text>
+      <!-- 堆叠柱：月度领导带班 + 季度专项 + 部门日常 -->
+      <rect x="48" y="160" width="60" height="40" fill="#5680DD" rx="2"/>
+      <rect x="48" y="148" width="60" height="12" fill="#2656BB" rx="2"/>
+      <rect x="48" y="140" width="60" height="8" fill="#0BAFD2" rx="2"/>
+      <text x="78" y="135" text-anchor="middle" style="font-weight:600;fill:#3E424A">15</text>
+
+      <rect x="143" y="148" width="60" height="52" fill="#5680DD" rx="2"/>
+      <rect x="143" y="135" width="60" height="13" fill="#2656BB" rx="2"/>
+      <rect x="143" y="125" width="60" height="10" fill="#0BAFD2" rx="2"/>
+      <text x="173" y="120" text-anchor="middle" style="font-weight:600;fill:#3E424A">22</text>
+
+      <rect x="238" y="138" width="60" height="62" fill="#5680DD" rx="2"/>
+      <rect x="238" y="120" width="60" height="18" fill="#2656BB" rx="2"/>
+      <rect x="238" y="108" width="60" height="12" fill="#0BAFD2" rx="2"/>
+      <text x="268" y="103" text-anchor="middle" style="font-weight:600;fill:#3E424A">31</text>
+
+      <rect x="333" y="118" width="60" height="82" fill="#5680DD" rx="2"/>
+      <rect x="333" y="98" width="60" height="20" fill="#2656BB" rx="2"/>
+      <rect x="333" y="84" width="60" height="14" fill="#0BAFD2" rx="2"/>
+      <text x="363" y="79" text-anchor="middle" style="font-weight:600;fill:#3E424A">42</text>
+
+      <rect x="428" y="108" width="60" height="92" fill="#5680DD" rx="2"/>
+      <rect x="428" y="86" width="60" height="22" fill="#2656BB" rx="2"/>
+      <rect x="428" y="72" width="60" height="14" fill="#0BAFD2" rx="2"/>
+      <text x="458" y="67" text-anchor="middle" style="font-weight:600;fill:#3E424A">46</text>
+    </svg>
+    <div class="chart-legend">
+      <div class="item"><span class="dot" style="background:#5680DD;height:10px"></span>部门日常巡检</div>
+      <div class="item"><span class="dot" style="background:#2656BB;height:10px"></span>月度领导带班</div>
+      <div class="item"><span class="dot" style="background:#0BAFD2;height:10px"></span>季度专项检查</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>检查类型分布</h3>
+    <div class="pie-section" style="flex-direction:column">
+      <div style="display:flex;justify-content:center">
+        <div class="pie-chart-css" style="background:conic-gradient(
+          var(--primary) 0% 38%,
+          var(--info) 38% 61%,
+          var(--warning) 61% 78%,
+          var(--success) 78% 90%,
+          var(--purple) 90% 100%
+        )">
+          <div class="pie-center"><div class="pie-num">186</div><div class="pie-lbl">总检查</div></div>
+        </div>
+      </div>
+      <div class="pie-legend" style="margin-top:14px">
+        <div class="item"><span class="dot" style="background:var(--primary)"></span><span class="lname">部门日常巡检</span><span class="count">71</span><span class="pct">38.2%</span></div>
+        <div class="item"><span class="dot" style="background:var(--info)"></span><span class="lname">月度领导带班</span><span class="count">42</span><span class="pct">22.6%</span></div>
+        <div class="item"><span class="dot" style="background:var(--warning)"></span><span class="lname">季度专项检查</span><span class="count">32</span><span class="pct">17.2%</span></div>
+        <div class="item"><span class="dot" style="background:var(--success)"></span><span class="lname">节前 / 季节</span><span class="count">22</span><span class="pct">11.8%</span></div>
+        <div class="item"><span class="dot" style="background:var(--purple)"></span><span class="lname">作业前 / 临时</span><span class="count">19</span><span class="pct">10.2%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ===== 领导带班执行情况 ===== -->
+<!-- ============================================================ -->
+<div class="sec-title">
+  <span>领导带班执行情况</span>
+  <span class="sec-sub">参照《安全风险分级管控办法》责任分级</span>
+  <span class="sec-tag">数据：安全检查台账 · 领导带班记录</span>
+</div>
+
+<!-- 个人执行明细 -->
+<div class="table-wrapper exec-table">
+  <div class="table-toolbar">
+    <div class="info">领导带班 · 个人执行明细 · 共 <b>13</b> 人</div>
+    <div class="actions">
+      <button class="btn btn-default btn-xs">仅看落后</button>
+      <button class="btn btn-outline btn-xs">导出</button>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:48px">序号</th>
+        <th style="width:110px">角色</th>
+        <th style="width:170px">姓名 · 职务</th>
+        <th>分管业务 / 区域</th>
+        <th style="width:80px;text-align:center">应检</th>
+        <th style="width:80px;text-align:center">已检</th>
+        <th style="width:120px">最近一次</th>
+        <th style="width:104px;text-align:center">状态</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="exec-row">
+        <td>1</td>
+        <td><span class="role-tag r-ceo">总经理</span></td>
+        <td><div class="person"><span class="av">褚</span>褚洪涛 · 总经理</div></td>
+        <td>全院综合（A 级 2 + B 级抽查）</td>
+        <td class="text-center">5</td>
+        <td class="text-center">5</td>
+        <td>2026-05-22</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>2</td>
+        <td><span class="role-tag r-vp">分管副总</span></td>
+        <td><div class="person"><span class="av">李</span>李诚星 · 副总经理</div></td>
+        <td>安环部 / 物业 / 院本部</td>
+        <td class="text-center">10</td>
+        <td class="text-center">9</td>
+        <td>2026-05-18</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>3</td>
+        <td><span class="role-tag r-vp">分管副总</span></td>
+        <td><div class="person"><span class="av">王</span>王晋 · 副总经理</div></td>
+        <td>资环 / 选矿事业部</td>
+        <td class="text-center">10</td>
+        <td class="text-center">8</td>
+        <td>2026-05-12</td>
+        <td class="text-center"><span class="s-tag s-warn">落后 2 次</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>4</td>
+        <td><span class="role-tag r-vp">分管副总</span></td>
+        <td><div class="person"><span class="av">谢</span>谢乐平 · 副总经理</div></td>
+        <td>检测中心本部</td>
+        <td class="text-center">10</td>
+        <td class="text-center">9</td>
+        <td>2026-05-15</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>5</td>
+        <td><span class="role-tag r-vp">分管副总</span></td>
+        <td><div class="person"><span class="av">汤</span>汤义武 · 副总经理</div></td>
+        <td>智能矿山 / 后湖基地</td>
+        <td class="text-center">10</td>
+        <td class="text-center">7</td>
+        <td>2026-05-08</td>
+        <td class="text-center"><span class="s-tag s-bad">落后 3 次</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>6</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">龚</span>龚明 · 资环事业部主任</div></td>
+        <td>资环事业部（B 1 · C 8 · D 3）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">22</td>
+        <td>2026-05-25</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>7</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">谢</span>谢乐平 · 检测中心主任</div></td>
+        <td>检测中心（A 1 · B 2 · C 6 · D 8）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">21</td>
+        <td>2026-05-24</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>8</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">汤</span>汤义武 · 智能矿山事业部</div></td>
+        <td>智能矿山（A 1 · B 4 · C 5）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">18</td>
+        <td>2026-05-19</td>
+        <td class="text-center"><span class="s-tag s-warn">落后 4 次</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>9</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">莫</span>莫进信 · 充填事业部</div></td>
+        <td>充填事业部（B 5 · C 2）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">19</td>
+        <td>2026-05-22</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>10</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">谭</span>谭文玮 · 物业运营部</div></td>
+        <td>院本部 / 物业（B 1 · C 4 · D 4）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">20</td>
+        <td>2026-05-23</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>11</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">吴</span>吴敏 · 安环部主任</div></td>
+        <td>院本部安环（A 1 · B 3 · C 5）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">22</td>
+        <td>2026-05-26</td>
+        <td class="text-center"><span class="s-tag s-ok">正常</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>12</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">周</span>周永辉 · 深部开采所所长</div></td>
+        <td>深部开采所（B 2 · C 3）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">17</td>
+        <td>2026-05-16</td>
+        <td class="text-center"><span class="s-tag s-warn">落后 5 次</span></td>
+      </tr>
+      <tr class="exec-row">
+        <td>13</td>
+        <td><span class="role-tag r-dept">部门负责人</span></td>
+        <td><div class="person"><span class="av">张</span>张磊 · 新材料所所长</div></td>
+        <td>新材料所（C 4 · D 2）</td>
+        <td class="text-center">22</td>
+        <td class="text-center">14</td>
+        <td>2026-05-09</td>
+        <td class="text-center"><span class="s-tag s-bad">落后 8 次</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- ===== 隐患统计 ===== -->
+<!-- ============================================================ -->
+<div class="sec-title">
+  <span>隐患统计</span>
+  <span class="sec-sub">状态分布 · 类型 TOP · 部门 ranking · 趋势</span>
+  <span class="sec-tag">数据：事故隐患整改清单</span>
+</div>
+
+<!-- 隐患状态分布 5 卡 -->
+<div class="hz-state-row">
+  <div class="hz-state-cell s-pending">
+    <div class="lbl"><span class="dot"></span>待整改</div>
+    <div class="num">9</div>
+    <div class="pct">占比 6.3% · 含 ≤ 3 天到期 3 项</div>
+  </div>
+  <div class="hz-state-cell s-running">
+    <div class="lbl"><span class="dot"></span>整改中</div>
+    <div class="num">10</div>
+    <div class="pct">占比 7.0% · 本周新增反馈 4 项</div>
+  </div>
+  <div class="hz-state-cell s-verify">
+    <div class="lbl"><span class="dot"></span>待验收</div>
+    <div class="num">4</div>
+    <div class="pct">占比 2.8% · 已超 24h 未受理 1 项</div>
+  </div>
+  <div class="hz-state-cell s-done">
+    <div class="lbl"><span class="dot"></span>已完结</div>
+    <div class="num">119</div>
+    <div class="pct">占比 83.8% · 闭环率达标</div>
+  </div>
+  <div class="hz-state-cell s-overdue">
+    <div class="lbl"><span class="dot"></span>已超期</div>
+    <div class="num">2</div>
+    <div class="pct">占比 1.4% · 已上报院办</div>
+  </div>
+</div>
+
+<div class="charts-grid cols-2" style="margin-top:14px">
+  <div class="chart-card">
+    <h3>隐患大类分布 <span style="font-size:11px;font-weight:400;color:var(--text-muted)">单位：项</span></h3>
+    <div class="cat-bar">
+      <div class="cb-item"><span class="cb-name">职业健康安全</span><div class="cb-bg"><div class="cb-fill" style="width:100%"></div></div><span class="cb-num">38</span><span class="cb-pct">26.8%</span></div>
+      <div class="cb-item"><span class="cb-name">安全管理</span><div class="cb-bg"><div class="cb-fill orange" style="width:79%"></div></div><span class="cb-num">30</span><span class="cb-pct">21.1%</span></div>
+      <div class="cb-item"><span class="cb-name">用电安全</span><div class="cb-bg"><div class="cb-fill red" style="width:63%"></div></div><span class="cb-num">24</span><span class="cb-pct">16.9%</span></div>
+      <div class="cb-item"><span class="cb-name">环境保护</span><div class="cb-bg"><div class="cb-fill green" style="width:45%"></div></div><span class="cb-num">17</span><span class="cb-pct">12.0%</span></div>
+      <div class="cb-item"><span class="cb-name">消防安全</span><div class="cb-bg"><div class="cb-fill purple" style="width:34%"></div></div><span class="cb-num">13</span><span class="cb-pct">9.2%</span></div>
+      <div class="cb-item"><span class="cb-name">化学品 · 危废</span><div class="cb-bg"><div class="cb-fill cyan" style="width:26%"></div></div><span class="cb-num">10</span><span class="cb-pct">7.0%</span></div>
+      <div class="cb-item"><span class="cb-name">其他</span><div class="cb-bg"><div class="cb-fill" style="width:26%;background:#9096A2"></div></div><span class="cb-num">10</span><span class="cb-pct">7.0%</span></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>各部门隐患情况 <span style="font-size:11px;font-weight:400;color:var(--text-muted)">登记数 / 闭环数</span></h3>
+    <div class="bar-chart">
+      <div class="bar-item"><span class="name">资环事业部</span>
+        <div class="bar-bg"><div class="bar-fill" style="width:100%"></div></div>
+        <span class="percent">42 / 36</span>
+      </div>
+      <div class="bar-item"><span class="name">检测中心</span>
+        <div class="bar-bg"><div class="bar-fill cyan" style="width:74%"></div></div>
+        <span class="percent">31 / 27</span>
+      </div>
+      <div class="bar-item"><span class="name">智能矿山事业部</span>
+        <div class="bar-bg"><div class="bar-fill cyan" style="width:60%"></div></div>
+        <span class="percent">25 / 21</span>
+      </div>
+      <div class="bar-item"><span class="name">物业运营部</span>
+        <div class="bar-bg"><div class="bar-fill success" style="width:48%"></div></div>
+        <span class="percent">20 / 19</span>
+      </div>
+      <div class="bar-item"><span class="name">充填事业部</span>
+        <div class="bar-bg"><div class="bar-fill success" style="width:36%"></div></div>
+        <span class="percent">15 / 11</span>
+      </div>
+      <div class="bar-item"><span class="name">院本部</span>
+        <div class="bar-bg"><div class="bar-fill warn" style="width:21%"></div></div>
+        <span class="percent">9 / 5</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <h3>近 6 个月新增 vs 闭环 <span style="font-size:11px;font-weight:400;color:var(--text-muted)">闭环率持续上升</span></h3>
+  <svg class="svg-chart" viewBox="0 0 600 240" preserveAspectRatio="none" style="height:220px">
+    <line class="grid" x1="40" y1="40" x2="590" y2="40"/>
+    <line class="grid" x1="40" y1="80" x2="590" y2="80"/>
+    <line class="grid" x1="40" y1="120" x2="590" y2="120"/>
+    <line class="grid" x1="40" y1="160" x2="590" y2="160"/>
+    <line class="axis" x1="40" y1="200" x2="590" y2="200"/>
+    <line class="axis" x1="40" y1="20" x2="40" y2="200"/>
+    <text x="0" y="44">40</text><text x="0" y="84">30</text><text x="0" y="124">20</text><text x="0" y="164">10</text><text x="0" y="204">0</text>
+    <text x="80" y="220">2025-12</text><text x="170" y="220">2026-01</text><text x="260" y="220">2026-02</text>
+    <text x="350" y="220">2026-03</text><text x="440" y="220">2026-04</text><text x="530" y="220">2026-05</text>
+    <!-- 新增 (橙) -->
+    <path class="line-orange area-orange" d="M 90 152 L 180 144 L 270 132 L 360 100 L 450 88 L 540 80 L 540 200 L 90 200 Z" stroke="#F29100"/>
+    <polyline class="line-orange" points="90,152 180,144 270,132 360,100 450,88 540,80"/>
+    <!-- 闭环 (绿) -->
+    <path class="line-green area-green" d="M 90 168 L 180 158 L 270 142 L 360 118 L 450 98 L 540 92 L 540 200 L 90 200 Z" stroke="#1BB975"/>
+    <polyline class="line-green" points="90,168 180,158 270,142 360,118 450,98 540,92"/>
+    <!-- 数据点 -->
+    <circle class="dot-orange" cx="90" cy="152" r="3.5"/>
+    <circle class="dot-orange" cx="180" cy="144" r="3.5"/>
+    <circle class="dot-orange" cx="270" cy="132" r="3.5"/>
+    <circle class="dot-orange" cx="360" cy="100" r="3.5"/>
+    <circle class="dot-orange" cx="450" cy="88" r="3.5"/>
+    <circle class="dot-orange" cx="540" cy="80" r="3.5"/>
+    <circle class="dot-green" cx="90" cy="168" r="3.5"/>
+    <circle class="dot-green" cx="180" cy="158" r="3.5"/>
+    <circle class="dot-green" cx="270" cy="142" r="3.5"/>
+    <circle class="dot-green" cx="360" cy="118" r="3.5"/>
+    <circle class="dot-green" cx="450" cy="98" r="3.5"/>
+    <circle class="dot-green" cx="540" cy="92" r="3.5"/>
+    <text x="90" y="146" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">12</text>
+    <text x="180" y="138" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">14</text>
+    <text x="270" y="126" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">17</text>
+    <text x="360" y="94" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">25</text>
+    <text x="450" y="82" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">28</text>
+    <text x="540" y="74" text-anchor="middle" style="font-size:10px;fill:#F29100;font-weight:600">30</text>
+  </svg>
+  <div class="chart-legend">
+    <div class="item"><span class="dot" style="background:#F29100;height:10px"></span>新增隐患</div>
+    <div class="item"><span class="dot" style="background:#1BB975;height:10px"></span>已闭环</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ===== 风险单元检查情况 ===== -->
+<!-- ============================================================ -->
+<div class="sec-title">
+  <span>风险单元检查情况</span>
+  <span class="sec-sub">A/B/C/D 等级覆盖率 · 漏检明细</span>
+  <span class="sec-tag">数据：安全风险分布及分级明细</span>
+</div>
+
+<!-- 4 等级聚合 -->
+<div class="lv-mix-row">
+  <div class="lv-mix-cell lv-A">
+    <span class="lv-tag">A</span>
+    <div class="lv-info">
+      <div class="lv-line"><span class="lv-num">2</span><span class="lv-name">个 · 重大风险</span></div>
+      <div class="lv-cov"><div class="lv-cov-bar" style="width:100%"></div></div>
+      <div class="lv-foot"><span>本月覆盖率</span><span style="color:var(--success);font-weight:600">100%（2/2）</span></div>
+    </div>
+  </div>
+  <div class="lv-mix-cell lv-B">
+    <span class="lv-tag">B</span>
+    <div class="lv-info">
+      <div class="lv-line"><span class="lv-num">12</span><span class="lv-name">个 · 较大风险</span></div>
+      <div class="lv-cov"><div class="lv-cov-bar" style="width:91.7%"></div></div>
+      <div class="lv-foot"><span>本月覆盖率</span><span style="color:var(--success);font-weight:600">91.7%（11/12）</span></div>
+    </div>
+  </div>
+  <div class="lv-mix-cell lv-C">
+    <span class="lv-tag">C</span>
+    <div class="lv-info">
+      <div class="lv-line"><span class="lv-num">28</span><span class="lv-name">个 · 一般风险</span></div>
+      <div class="lv-cov"><div class="lv-cov-bar" style="width:89.3%"></div></div>
+      <div class="lv-foot"><span>本月覆盖率</span><span style="color:var(--warning);font-weight:600">89.3%（25/28）</span></div>
+    </div>
+  </div>
+  <div class="lv-mix-cell lv-D">
+    <span class="lv-tag">D</span>
+    <div class="lv-info">
+      <div class="lv-line"><span class="lv-num">18</span><span class="lv-name">个 · 低风险</span></div>
+      <div class="lv-cov"><div class="lv-cov-bar" style="width:72.2%"></div></div>
+      <div class="lv-foot"><span>本月覆盖率</span><span style="color:var(--warning);font-weight:600">72.2%（13/18）</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid col-2-1">
+  <!-- 漏检 / 检查不足 单元清单 -->
+  <div class="chart-card miss-table" style="padding:0">
+    <h3 style="padding:18px 22px 14px;margin-bottom:0;border-bottom:1px solid var(--border-light)">本月漏检 / 检查不足单元 <span style="font-size:11px;font-weight:400;color:var(--text-muted)">共 9 个 · 需重点关注</span></h3>
+    <table style="margin:0">
+      <thead>
+        <tr>
+          <th style="width:56px">等级</th>
+          <th>单元名称</th>
+          <th style="width:140px">责任部门</th>
+          <th style="width:120px;text-align:center">应检 / 已检</th>
+          <th style="width:120px">最近一次检查</th>
+          <th style="width:80px;text-align:center">状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="lvl lvl-B" style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#fff5e5;color:#F29100"><span style="width:6px;height:6px;border-radius:50%;background:#F29100"></span>B</span></td>
+          <td>充填实验室·激发剂生产模拟系统</td>
+          <td>充填事业部</td>
+          <td class="text-center">4 / 3</td>
+          <td>2026-05-08</td>
+          <td class="text-center"><span class="miss-tag warn">少 1 次</span></td>
+        </tr>
+        <tr>
+          <td><span class="lvl lvl-C" style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#fdf6dd;color:#A37700"><span style="width:6px;height:6px;border-radius:50%;background:#E6BB00"></span>C</span></td>
+          <td>本安系统特性实验室</td>
+          <td>检测中心</td>
+          <td class="text-center">4 / 3</td>
+          <td>2026-05-12</td>
+          <td class="text-center"><span class="miss-tag warn">少 1 次</span></td>
+        </tr>
+        <tr>
+          <td><span class="lvl lvl-C" style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#fdf6dd;color:#A37700"><span style="width:6px;height:6px;border-radius:50%;background:#E6BB00"></span>C</span></td>
+          <td>样品处理室·烘干作业</td>
+          <td>资环事业部</td>
+          <td class="text-center">4 / 2</td>
+          <td>2026-05-04</td>
+          <td class="text-center"><span class="miss-tag">少 2 次</span></td>
+        </tr>
+        <tr>
+          <td><span class="lvl lvl-D" style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e6f7ff;color:#0BAFD2"><span style="width:6px;height:6px;border-radius:50%;background:#0BAFD2"></span>D</span></td>
+          <td>办公楼·二号实验室办公区</td>
+          <td>检测中心</td>
+          <td class="text-center">22 / 16</td>
+          <td>2026-05-21</td>
+          <td class="text-center"><span class="miss-tag warn">少 6 次</span></td>
+        </tr>
+        <tr>
+          <td><span class="lvl lvl-D" style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e6f7ff;color:#0BAFD2"><span style="width:6px;height:6px;border-radius:50%;background:#0BAFD2"></span>D</span></td>
+          <td>院内道路·停车场（地下车库）</td>
+          <td>物业运营部</td>
+          <td class="text-center">22 / 14</td>
+          <td>2026-05-18</td>
+          <td class="text-center"><span class="miss-tag">少 8 次</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 风险等级 pie -->
+  <div class="chart-card">
+    <h3>等级分布</h3>
+    <div class="pie-section" style="flex-direction:column">
+      <div style="display:flex;justify-content:center">
+        <div class="pie-chart-css" style="background:conic-gradient(
+          #DF2027 0% 3.3%,
+          #F29100 3.3% 23.3%,
+          #E6BB00 23.3% 70%,
+          #0BAFD2 70% 100%
+        )">
+          <div class="pie-center"><div class="pie-num">60</div><div class="pie-lbl">风险单元</div></div>
+        </div>
+      </div>
+      <div class="pie-legend" style="margin-top:14px">
+        <div class="item"><span class="dot" style="background:#DF2027"></span><span class="lname">A 级 · 重大</span><span class="count">2</span><span class="pct">3.3%</span></div>
+        <div class="item"><span class="dot" style="background:#F29100"></span><span class="lname">B 级 · 较大</span><span class="count">12</span><span class="pct">20.0%</span></div>
+        <div class="item"><span class="dot" style="background:#E6BB00"></span><span class="lname">C 级 · 一般</span><span class="count">28</span><span class="pct">46.7%</span></div>
+        <div class="item"><span class="dot" style="background:#0BAFD2"></span><span class="lname">D 级 · 低</span><span class="count">18</span><span class="pct">30.0%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+

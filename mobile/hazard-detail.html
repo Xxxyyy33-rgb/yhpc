@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>隐患详情 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+</head>
+<body style="background:#F4F6FB;padding-bottom:90px">
+
+<header class="app-bar" style="padding-bottom:14px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="hazard-list.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">隐患详情</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="top-tabs">
+    <span class="t-item active">隐患信息</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">流程图</span>
+    <span class="t-divider">|</span>
+    <span class="t-item">附件</span>
+  </div>
+</header>
+
+<!-- 标题 + 状态 -->
+<div class="card">
+  <div class="card-pad" style="padding:14px 16px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <div style="font-size:16px;font-weight:600;color:var(--text-title);line-height:1.5">充填实验室最西头的临建房墙体已经严重裂开，随时有倒塌的风险</div>
+      <span class="title-badge danger" style="flex-shrink:0">待整改</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);font-family:Menlo,Consolas,monospace">CKY-YHZG-2026-04-08</div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <span class="tag tag-blue">安全管理</span>
+      <span class="tag tag-warning">主体结构</span>
+    </div>
+    <div style="margin-top:12px;padding:10px 12px;background:#fef9f0;border-radius:8px;border-left:3px solid var(--warning);font-size:12px;color:var(--text-regular);line-height:1.6">
+      <b style="color:var(--warning)">⏰ 距整改期限剩余 3 天</b>　·　请尽快完成整改并提交反馈
+    </div>
+  </div>
+</div>
+
+<!-- 隐患信息 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>隐患信息</div>
+  <div class="form-row"><div class="label">检查日期</div><div class="value">2026-05-12</div></div>
+  <div class="form-row"><div class="label">受检单位</div><div class="value">资环事业部 · 充填实验室</div></div>
+  <div class="form-row"><div class="label">所在区域</div><div class="value">充填实验室西区</div></div>
+  <div class="form-row"><div class="label">隐患大类</div><div class="value"><span class="tag tag-blue">安全管理</span></div></div>
+  <div class="form-row"><div class="label">隐患类型</div><div class="value"><span class="tag tag-warning">主体结构</span></div></div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">隐患描述</div>
+    <div class="value" style="color:var(--text-regular);line-height:1.7;text-align:left">充填实验室最西头的临建房（约 28㎡，砖混结构，使用年限 12 年）墙体已经严重裂开，最大裂缝宽度 8 cm，墙面外凸明显，随时有倒塌的风险，下方为 380V 配电柜与员工通道，存在重大安全隐患。</div>
+  </div>
+  <div class="form-row col" style="border-top:1px solid #f1f3f6">
+    <div class="label">隐患照片 / 视频</div>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#dfe7f5,#c8d3eb)">隐患照片<br>1</div></div>
+    <div class="upload-cell"><div class="preview" style="background:linear-gradient(135deg,#f29100,#ffc266);color:#fff">隐患照片<br>2</div></div>
+    <div class="upload-cell">
+      <div class="preview" style="background:linear-gradient(135deg,#1a4299,#5680DD);color:#fff">现场视频</div>
+      <span class="video-tag"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 00:12</span>
+      <span class="play-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+    </div>
+  </div>
+</div>
+
+<!-- 整改要求 -->
+<div class="form-section">
+  <div class="form-section-title"><span class="dot"></span>整改要求</div>
+  <div class="form-row col">
+    <div class="value" style="color:var(--text-regular);line-height:1.7">1. 立即停止使用该临建房，划设警示带与警示标志；
+2. 委托具备资质的第三方对房屋进行安全评估；
+3. 评估通过后于 2026-05-30 前完成拆除。</div>
+  </div>
+  <div class="form-row"><div class="label">整改责任人</div><div class="value">熊维 · 资环事业部</div></div>
+  <div class="form-row"><div class="label">整改截止</div><div class="value text-error text-bold">2026-05-30（剩余 3 天）</div></div>
+</div>
+
+<!-- 整改进度时间轴 -->
+<div class="form-section">
+  <div class="form-section-title">
+    <span class="dot"></span>整改进度
+    <span class="text-muted text-xs" style="margin-left:auto;font-weight:500">1 / 3 步</span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item done">
+      <div class="ti-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <div class="ti-body">
+        <div class="ti-title">隐患登记 <span class="tag tag-success">已完成</span></div>
+        <div class="ti-time">2026-05-12 15:42 · 龚明（资环事业部 · 安全员）</div>
+        <div class="ti-content">充填实验室综合检查中发现，已附 3 张照片 + 1 段视频。</div>
+      </div>
+    </div>
+    <div class="timeline-item warn">
+      <div class="ti-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div class="ti-body">
+        <div class="ti-title">整改反馈 <span class="tag tag-warning">待提交</span></div>
+        <div class="ti-time">期限：2026-05-30 · 熊维（整改责任人）</div>
+        <div class="ti-content">已完成停止使用、现场封闭；已联系外部资质单位评估，预计 2026-05-28 出具评估报告后提交反馈。</div>
+      </div>
+    </div>
+    <div class="timeline-item pending">
+      <div class="ti-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+      </div>
+      <div class="ti-body">
+        <div class="ti-title">现场验收 <span class="tag tag-muted">未开始</span></div>
+        <div class="ti-time">由安环部完成</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:16px"></div>
+
+<!-- 底部操作栏（左侧更多 + 主操作蓝色 + 次操作红色） -->
+<div class="action-bar">
+  <span class="more-btn">···</span>
+  <a href="rectify-feedback.html" class="btn btn-primary" style="flex:1.5">提交整改反馈</a>
+  <a href="javascript:;" class="btn btn-danger" style="flex:1.2">退回检查人</a>
+</div>
+
+</body>
+</html>

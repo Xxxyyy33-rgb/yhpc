@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>检查记录 · 安全隐患排查</title>
+<link rel="stylesheet" href="m-style.css" />
+<style>
+/* ====== 检查记录页 · 列表样式 ====== */
+body{padding-bottom:30px}
+
+/* 概览统计条（融入头部底部） */
+.app-bar .summary-bar{
+  position:relative;display:flex;align-items:center;gap:8px;
+  margin:14px 0 0;padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.22);
+}
+.app-bar .summary-bar .sb-cell{flex:1;text-align:center;color:#fff;line-height:1.2}
+.app-bar .summary-bar .sb-cell .sb-num{font-size:20px;font-weight:700}
+.app-bar .summary-bar .sb-cell .sb-num.warn{color:#FFD58A}
+.app-bar .summary-bar .sb-cell .sb-num.error{color:#FF9A9F}
+.app-bar .summary-bar .sb-cell .sb-lbl{font-size:11px;opacity:.85;margin-top:3px}
+.app-bar .summary-bar .sb-divider{width:1px;height:28px;background:rgba(255,255,255,.18)}
+
+/* 列表筛选条（白底紧贴头部） */
+.list-filter{
+  display:flex;align-items:center;gap:8px;background:#fff;
+  padding:10px 14px;border-bottom:1px solid #f1f3f6;overflow-x:auto;scrollbar-width:none;
+}
+.list-filter::-webkit-scrollbar{display:none}
+.list-filter .lf-chip{
+  flex-shrink:0;display:inline-flex;align-items:center;gap:3px;padding:6px 11px;
+  border-radius:14px;background:#f4f6fb;color:var(--text-regular);font-size:12px;
+  border:1px solid transparent;
+}
+.list-filter .lf-chip svg{width:11px;height:11px;color:var(--text-muted)}
+.list-filter .lf-chip.active{background:var(--primary-bg);color:var(--primary);border-color:#dde6f7;font-weight:500}
+.list-filter .lf-chip.active svg{color:var(--primary)}
+
+/* 列表统计行 */
+.list-stat{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 6px;font-size:12px;color:var(--text-muted);
+}
+.list-stat b{color:var(--primary);font-weight:600}
+.list-stat .ls-sort{color:var(--text-regular);display:inline-flex;align-items:center;gap:3px}
+.list-stat .ls-sort svg{width:12px;height:12px}
+
+/* === 检查记录卡 v2 === */
+.ck-card{
+  display:block;background:#fff;border-radius:14px;margin:10px 14px 0;
+  padding:14px 16px;border:1px solid #eef1f5;
+  box-shadow:0 1px 2px rgba(38,86,187,.04);
+}
+.ck-card:active{background:#fafbfd}
+
+/* 顶部：编号 + 类型徽标 */
+.ck-card .ck-top{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}
+.ck-card .ck-no{
+  font-family:Menlo,Consolas,monospace;font-size:11px;color:var(--text-muted);
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ck-card .ck-type{
+  flex-shrink:0;font-size:11px;font-weight:500;padding:2px 9px;border-radius:10px;
+  background:var(--primary-bg);color:var(--primary);
+}
+.ck-card .ck-type.warn{background:var(--warning-light);color:var(--warning)}
+.ck-card .ck-type.green{background:var(--success-light);color:var(--success)}
+.ck-card .ck-type.purple{background:var(--purple-light);color:var(--purple)}
+
+/* 标题 */
+.ck-card .ck-title{
+  font-size:15px;font-weight:600;color:var(--text-title);line-height:1.5;margin-bottom:10px;
+}
+
+/* 信息行（每行 label + 值） */
+.ck-card .ck-row{
+  display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.5;
+  color:var(--text-regular);padding:3px 0;
+}
+.ck-card .ck-row .ck-lbl{
+  flex-shrink:0;width:60px;color:var(--text-muted);
+}
+.ck-card .ck-row .ck-val{flex:1;min-width:0;color:var(--text-title);font-weight:500}
+
+/* 隐患统计条（独立块） */
+.ck-card .ck-hz{
+  display:flex;align-items:center;gap:8px;
+  margin-top:10px;padding:10px 12px;border-radius:8px;background:#f8faff;
+  font-size:12px;color:var(--text-regular);
+}
+.ck-card .ck-hz svg{width:14px;height:14px;flex-shrink:0}
+.ck-card .ck-hz .ck-hz-num{font-size:16px;font-weight:700;margin:0 2px}
+.ck-card .ck-hz.error{background:#FEF2F3;color:#A91A20}
+.ck-card .ck-hz.error .ck-hz-num{color:var(--error)}
+.ck-card .ck-hz.warn{background:#FFF7EC;color:#A06200}
+.ck-card .ck-hz.warn .ck-hz-num{color:var(--warning)}
+.ck-card .ck-hz.success{background:#F0FDF6;color:#0E7C4F}
+.ck-card .ck-hz.success .ck-hz-num{color:var(--success)}
+.ck-card .ck-hz .ck-hz-detail{margin-left:auto;font-size:11px;opacity:.75}
+
+/* 底部 */
+.ck-card .ck-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding-top:10px;border-top:1px dashed #eef1f5;
+  font-size:11.5px;color:var(--text-muted);
+}
+.ck-card .ck-foot .ck-meta{display:inline-flex;align-items:center;gap:4px}
+.ck-card .ck-foot .ck-meta svg{width:11px;height:11px}
+.ck-card .ck-foot .ck-go{
+  color:var(--primary);font-weight:600;font-size:12px;
+  display:inline-flex;align-items:center;gap:2px;
+}
+.ck-card .ck-foot .ck-go svg{width:11px;height:11px}
+
+/* 加载更多 */
+.list-more{
+  text-align:center;color:var(--text-muted);font-size:12px;padding:18px 0 24px;
+}
+.list-more b{color:var(--primary);font-weight:500}
+
+/* 浮动发起按钮 */
+.fab-create{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-bottom));
+  z-index:50;width:calc(100% - 28px);max-width:402px;height:48px;border-radius:24px;
+  background:linear-gradient(135deg,#2656BB,#5680DD);color:#fff;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:15px;font-weight:600;
+  box-shadow:0 8px 22px rgba(38,86,187,.32);
+}
+.fab-create svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+
+<header class="app-bar" style="padding-bottom:16px">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+      <span class="battery">82</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <a class="nav-back" href="home.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="nav-title">检查记录</div>
+    <div class="nav-actions">
+      <a href="javascript:;" class="nav-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- 头部统计条（蓝渐变内透明白条） -->
+  <div class="summary-bar">
+    <div class="sb-cell"><div class="sb-num">28</div><div class="sb-lbl">本年检查</div></div>
+    <span class="sb-divider"></span>
+    <div class="sb-cell"><div class="sb-num warn">15</div><div class="sb-lbl">发现隐患</div></div>
+    <span class="sb-divider"></span>
+    <div class="sb-cell"><div class="sb-num error">3</div><div class="sb-lbl">未闭环</div></div>
+  </div>
+</header>
+
+<!-- 筛选条 -->
+<div class="list-filter">
+  <span class="lf-chip active">全部类型
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip">2026 年
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip">本部门
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+  <span class="lf-chip">仅我发起</span>
+</div>
+
+<!-- 列表统计 -->
+<div class="list-stat">
+  <span>共 <b>28</b> 条记录 · 当前 <b>6</b> 条</span>
+  <span class="ls-sort">按时间倒序
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </span>
+</div>
+
+<!-- 列表 -->
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-05-22</span>
+    <span class="ck-type">综合检查</span>
+  </div>
+  <div class="ck-title">资环试验室 · 综合安全环保检查</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">资环事业部 · 充填实验室</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">龚明 · 熊维 · 刘智强</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-05-22 09:30</span></div>
+  <div class="ck-hz warn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    发现隐患<span class="ck-hz-num">3</span>项
+    <span class="ck-hz-detail">已闭环 1 / 整改中 2</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 龚明 · 5 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-05-20</span>
+    <span class="ck-type warn">专项检查</span>
+  </div>
+  <div class="ck-title">中试车间 · 消防安全专项检查</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">选矿事业部 · 中试车间</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">张磊 · 周虹</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-05-20 14:00</span></div>
+  <div class="ck-hz error">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    发现隐患<span class="ck-hz-num">5</span>项
+    <span class="ck-hz-detail">待整改 3 / 整改中 2</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 张磊 · 7 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-05-18</span>
+    <span class="ck-type green">月度检查</span>
+  </div>
+  <div class="ck-title">5 月份月度环保巡检</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">全院（环保维度）</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">赵敏 · 吴楠 · 黄学斌</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-05-18 09:00</span></div>
+  <div class="ck-hz success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+    未发现隐患<span class="ck-hz-num">0</span>项
+    <span class="ck-hz-detail">检查全部通过</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 赵敏 · 9 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-05-15</span>
+    <span class="ck-type purple">作业前检查</span>
+  </div>
+  <div class="ck-title">化学品库房 · 危险作业前安全检查</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">资环事业部 · 化学品库</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">熊维</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-05-15 08:20</span></div>
+  <div class="ck-hz warn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    发现隐患<span class="ck-hz-num">1</span>项
+    <span class="ck-hz-detail">已闭环</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 熊维 · 12 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-05-10</span>
+    <span class="ck-type">季度检查</span>
+  </div>
+  <div class="ck-title">深部开采所 · 季度安全大检查</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">深部开采研究所（共 4 个项目部）</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">李建辉 · 陈强 · 沈伟 · 赵敏</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-05-10 09:00</span></div>
+  <div class="ck-hz success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+    发现隐患<span class="ck-hz-num">7</span>项
+    <span class="ck-hz-detail">已全部闭环</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 李建辉 · 17 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<a href="check-detail.html" class="ck-card">
+  <div class="ck-top">
+    <span class="ck-no">CKY-AQJC-2026-04-28</span>
+    <span class="ck-type warn">节前检查</span>
+  </div>
+  <div class="ck-title">新材料中试基地 · 节前安全检查</div>
+  <div class="ck-row"><span class="ck-lbl">受检单位</span><span class="ck-val">新材料研究所 · 中试基地</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查人员</span><span class="ck-val">吴敏 · 黄学斌</span></div>
+  <div class="ck-row"><span class="ck-lbl">检查时间</span><span class="ck-val">2026-04-28 16:00</span></div>
+  <div class="ck-hz success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+    发现隐患<span class="ck-hz-num">2</span>项
+    <span class="ck-hz-detail">已闭环</span>
+  </div>
+  <div class="ck-foot">
+    <span class="ck-meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      发起人 吴敏 · 30 天前
+    </span>
+    <span class="ck-go">查看详情
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </span>
+  </div>
+</a>
+
+<div class="list-more">— 已加载 6 / 28 条 · <b>点击加载更多 ›</b> —</div>
+
+<!-- 浮动发起按钮 -->
+<a href="check-create.html" class="fab-create">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  发起新检查
+</a>
+
+</body>
+</html>
